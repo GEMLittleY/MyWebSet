@@ -53,7 +53,9 @@ export default function MarkdownRenderer({ content }: { content: string }) {
           );
         },
       }}
-      />
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 }
