@@ -2,6 +2,7 @@ import { getPostBySlug, getAllPosts } from "@/lib/posts";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import MarkdownRenderer from "@/components/MarkdownRenderer";
 
 export const revalidate = 60;
 
@@ -24,27 +25,6 @@ export const dynamicParams = true;
 export async function generateStaticParams() {
   const posts = await getAllPosts();
   return posts.map((post) => ({ slug: post.slug }));
-}
-
-function renderMarkdown(content: string) {
-  return content
-    .split("\n")
-    .map((line) => {
-      if (line.startsWith("### ")) return `<h3>${line.slice(4)}</h3>`;
-      if (line.startsWith("## ")) return `<h2>${line.slice(3)}</h2>`;
-      if (line.startsWith("# ")) return `<h1>${line.slice(2)}</h1>`;
-      if (line.startsWith("- ")) return `<li>${line.slice(2)}</li>`;
-      if (/^\d+\. /.test(line))
-        return `<li>${line.replace(/^\d+\. /, "")}</li>`;
-      if (line.startsWith("> "))
-        return `<blockquote><p>${line.slice(2)}</p></blockquote>`;
-      if (line.trim() === "") return "<br/>";
-      return `<p>${line}</p>`;
-    })
-    .join("")
-    .replace(/<\/li>\n?<li>/g, "</li><li>")
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/`(.*?)`/g, "<code>$1</code>");
 }
 
 export default async function PostPage({ params }: Props) {
@@ -78,10 +58,7 @@ export default async function PostPage({ params }: Props) {
           </h1>
         </header>
 
-        <div
-          className="prose"
-          dangerouslySetInnerHTML={{ __html: renderMarkdown(post.content) }}
-        />
+        <MarkdownRenderer content={post.content} />
       </article>
     </div>
   );
