@@ -6,7 +6,7 @@ import type { Deck } from "@/lib/decks";
 
 const CLASS_IDS = [
   "all", "warrior", "mage", "hunter", "paladin", "priest",
-  "rogue", "shaman", "warlock", "druid",
+  "rogue", "shaman", "warlock", "druid", "demon-hunter", "death-knight",
 ];
 
 const ARCHETYPE_IDS = ["all", "aggro", "midrange", "control", "combo"];
