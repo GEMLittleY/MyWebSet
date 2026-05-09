@@ -37,24 +37,18 @@ export default function CardImage({
       onMouseEnter={() => setShowPreview(true)}
       onMouseLeave={() => setShowPreview(false)}
     >
-      <div className="relative rounded-lg overflow-hidden transition-transform group-hover:scale-105 group-hover:z-10 shadow-md group-hover:shadow-xl group-hover:shadow-black/40">
+      <div className="transition-transform group-hover:scale-105 group-hover:z-10">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={RENDER_URL(cardId)}
           alt={name}
-          className="w-full h-auto"
+          className="w-full h-auto drop-shadow-lg"
           onError={() => setImgError(true)}
           loading="lazy"
         />
-        {/* Count badge */}
         {count > 1 && (
           <div className="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-[#f0b232] text-[#0f1419] text-xs font-bold shadow-lg">
             {count}
-          </div>
-        )}
-        {count === 1 && (
-          <div className="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-[#f0b232] text-[#0f1419] text-xs font-bold shadow-lg">
-            ★
           </div>
         )}
       </div>
@@ -66,7 +60,7 @@ export default function CardImage({
           <img
             src={RENDER_URL(cardId)}
             alt={name}
-            className="w-[300px] rounded-xl shadow-2xl shadow-black/70"
+            className="w-[300px] drop-shadow-[0_8px_30px_rgba(0,0,0,0.7)]"
           />
         </div>
       )}
