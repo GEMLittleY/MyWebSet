@@ -1,8 +1,27 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f1419;
+  --foreground: #e8e6e3;
+  --card-bg: #1a1f2e;
+  --card-border: #2a3040;
+  --accent-gold: #f0b232;
+  --accent-blue: #4fc3f7;
+  --tier1: #ff6b35;
+  --tier2: #f0b232;
+  --tier3: #4fc3f7;
+  --tier4: #8b9bb4;
+  --warrior: #c41e3a;
+  --mage: #3fc7eb;
+  --hunter: #aad372;
+  --paladin: #f48cba;
+  --priest: #ffffff;
+  --rogue: #fff468;
+  --shaman: #0070dd;
+  --warlock: #8788ee;
+  --druid: #ff7c0a;
+  --demon-hunter: #a330c9;
+  --death-knight: #c41e3a;
 }
 
 @theme inline {
@@ -12,121 +31,73 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 0.75rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.card:hover {
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+}
+
+.gold-text {
+  color: var(--accent-gold);
+}
+
+.blue-text {
+  color: var(--accent-blue);
+}
+
+.tier-1 { color: var(--tier1); }
+.tier-2 { color: var(--tier2); }
+.tier-3 { color: var(--tier3); }
+.tier-4 { color: var(--tier4); }
+
+.class-warrior { color: var(--warrior); }
+.class-mage { color: var(--mage); }
+.class-hunter { color: var(--hunter); }
+.class-paladin { color: var(--paladin); }
+.class-priest { color: var(--priest); }
+.class-rogue { color: var(--rogue); }
+.class-shaman { color: var(--shaman); }
+.class-warlock { color: var(--warlock); }
+.class-druid { color: var(--druid); }
+.class-demon-hunter { color: var(--demon-hunter); }
+.class-death-knight { color: var(--death-knight); }
+
 .prose {
   line-height: 1.8;
 }
+.prose h1 { font-size: 2rem; font-weight: 700; margin-top: 2rem; margin-bottom: 1rem; color: var(--foreground); }
+.prose h2 { font-size: 1.5rem; font-weight: 600; margin-top: 1.75rem; margin-bottom: 0.75rem; color: var(--accent-gold); }
+.prose h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; color: var(--foreground); }
+.prose p { margin-bottom: 1.25rem; color: #9ca3af; }
+.prose ul, .prose ol { margin-bottom: 1.25rem; padding-left: 1.5rem; }
+.prose ul { list-style-type: disc; }
+.prose ol { list-style-type: decimal; }
+.prose li { margin-bottom: 0.5rem; color: #9ca3af; }
+.prose strong { font-weight: 600; color: var(--foreground); }
+.prose code { background: #2a3040; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; }
+.prose pre { background: #1a1f2e; color: #e5e7eb; padding: 1rem 1.25rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1.25rem; }
+.prose pre code { background: none; padding: 0; color: inherit; }
+.prose blockquote { border-left: 3px solid var(--accent-gold); padding-left: 1rem; margin-bottom: 1.25rem; font-style: italic; color: #6b7280; }
 
-.prose h1 {
-  font-size: 2rem;
-  font-weight: 700;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-  color: var(--foreground);
+.mana-bar {
+  background: linear-gradient(90deg, #4fc3f7, #1a73e8);
+  border-radius: 4px;
+  height: 20px;
+  transition: width 0.3s ease;
 }
 
-.prose h2 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-top: 1.75rem;
-  margin-bottom: 0.75rem;
-  color: var(--foreground);
-}
-
-.prose h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-top: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: var(--foreground);
-}
-
-.prose p {
-  margin-bottom: 1.25rem;
-  color: #4b5563;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose p {
-    color: #9ca3af;
-  }
-}
-
-.prose ul,
-.prose ol {
-  margin-bottom: 1.25rem;
-  padding-left: 1.5rem;
-}
-
-.prose ul {
-  list-style-type: disc;
-}
-
-.prose ol {
-  list-style-type: decimal;
-}
-
-.prose li {
-  margin-bottom: 0.5rem;
-  color: #4b5563;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose li {
-    color: #9ca3af;
-  }
-}
-
-.prose strong {
-  font-weight: 600;
-  color: var(--foreground);
-}
-
-.prose code {
-  background: #f3f4f6;
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-  font-size: 0.875rem;
-  font-family: var(--font-mono), monospace;
-}
-
-@media (prefers-color-scheme: dark) {
-  .prose code {
-    background: #1f2937;
-  }
-}
-
-.prose pre {
-  background: #1f2937;
-  color: #e5e7eb;
-  padding: 1rem 1.25rem;
-  border-radius: 0.5rem;
-  overflow-x: auto;
-  margin-bottom: 1.25rem;
-}
-
-.prose pre code {
-  background: none;
-  padding: 0;
-  color: inherit;
-}
-
-.prose blockquote {
-  border-left: 3px solid #3b82f6;
-  padding-left: 1rem;
-  margin-bottom: 1.25rem;
-  font-style: italic;
-  color: #6b7280;
-}
+.win-rate-good { color: #4ade80; }
+.win-rate-ok { color: #fbbf24; }
+.win-rate-bad { color: #f87171; }

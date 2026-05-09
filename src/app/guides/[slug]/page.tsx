@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = await getPostBySlug(slug);
   if (!post) return { title: "文章未找到" };
   return {
-    title: `${post.title} - MyWebSet`,
+    title: `${post.title} - HearthGuide`,
     description: post.excerpt,
   };
 }
@@ -27,37 +27,32 @@ export async function generateStaticParams() {
   return posts.map((post) => ({ slug: post.slug }));
 }
 
-export default async function PostPage({ params }: Props) {
+export default async function GuideDetailPage({ params }: Props) {
   const { slug } = await params;
   const post = await getPostBySlug(slug);
 
   if (!post) notFound();
 
   const date = new Date(post.published_at).toLocaleDateString("zh-CN", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
+    year: "numeric", month: "long", day: "numeric",
   });
 
   return (
-    <div className="max-w-3xl mx-auto px-6 py-16">
+    <div className="max-w-3xl mx-auto px-6 py-12">
       <Link
-        href="/blog"
-        className="inline-flex items-center text-sm text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors mb-8"
+        href="/guides"
+        className="text-sm text-gray-500 hover:text-[#f0b232] transition-colors"
       >
-        ← 返回文章列表
+        ← 返回攻略列表
       </Link>
 
-      <article>
-        <header className="mb-10">
-          <time className="text-sm text-gray-500 dark:text-gray-400">
-            {date}
-          </time>
-          <h1 className="mt-2 text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-100">
+      <article className="mt-6">
+        <header className="mb-8">
+          <time className="text-sm text-gray-500">{date}</time>
+          <h1 className="mt-2 text-3xl font-bold text-[#e8e6e3]">
             {post.title}
           </h1>
         </header>
-
         <MarkdownRenderer content={post.content} />
       </article>
     </div>

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MyWebSet - 个人博客",
-  description: "使用 Next.js + Supabase + Vercel + Cloudflare 搭建的免费个人博客",
+  title: "HearthGuide - 炉石传说攻略站",
+  description: "最全面的炉石传说卡组数据库、Meta 分析和上分攻略。Best Hearthstone decks, meta reports and strategy guides.",
 };
 
 export default function RootLayout({
@@ -29,7 +29,7 @@ export default function RootLayout({
       lang="zh-CN"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-[#0f1419] text-[#e8e6e3]">
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
