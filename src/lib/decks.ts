@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
 
+
 export type Card = {
   name: string;
   cost: number;
@@ -83,20 +84,32 @@ const DEMO_DECKS: Deck[] = [
   },
 ];
 
+function enrichWithCardIds(deck: Deck): Deck {
+  const hasCardIds = deck.card_list?.some((c) => c.card_id);
+  if (hasCardIds) return deck;
+
+  const demo = DEMO_DECKS.find((d) => d.slug === deck.slug);
+  if (!demo) return deck;
+
+  return { ...deck, card_list: demo.card_list, guide: demo.guide };
+}
+
 export async function getAllDecks(): Promise<Deck[]> {
+  if (!supabase) return DEMO_DECKS;
   try {
     const { data, error } = await supabase
       .from("decks")
       .select("*")
       .order("tier", { ascending: true });
     if (error || !data || data.length === 0) return DEMO_DECKS;
-    return data;
+    return data.map(enrichWithCardIds);
   } catch {
     return DEMO_DECKS;
   }
 }
 
 export async function getDeckBySlug(slug: string): Promise<Deck | null> {
+  if (!supabase) return DEMO_DECKS.find((d) => d.slug === slug) || null;
   try {
     const { data, error } = await supabase
       .from("decks")
@@ -104,7 +117,7 @@ export async function getDeckBySlug(slug: string): Promise<Deck | null> {
       .eq("slug", slug)
       .single();
     if (error || !data) return DEMO_DECKS.find((d) => d.slug === slug) || null;
-    return data;
+    return enrichWithCardIds(data);
   } catch {
     return DEMO_DECKS.find((d) => d.slug === slug) || null;
   }

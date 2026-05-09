@@ -475,6 +475,7 @@ const DEMO_POSTS: Post[] = [
 ];
 
 export async function getAllPosts(): Promise<Post[]> {
+  if (!supabase) return DEMO_POSTS;
   try {
     const { data, error } = await supabase
       .from("posts")
@@ -491,6 +492,7 @@ export async function getAllPosts(): Promise<Post[]> {
 }
 
 export async function getPostBySlug(slug: string): Promise<Post | null> {
+  if (!supabase) return DEMO_POSTS.find((p) => p.slug === slug) || null;
   try {
     const { data, error } = await supabase
       .from("posts")
