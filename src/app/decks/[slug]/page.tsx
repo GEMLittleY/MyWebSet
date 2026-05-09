@@ -202,7 +202,7 @@ export default function DeckDetailPage() {
           <h3 className="font-semibold gold-text">卡牌列表</h3>
           <span className="text-xs text-gray-500">{totalCards} 张卡牌</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
           {[...(deck.card_list || [])].sort((a, b) => a.cost - b.cost).map((card, i) => (
             <CardImage
               key={i}
