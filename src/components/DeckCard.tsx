@@ -11,6 +11,26 @@ const ARCHETYPE_NAMES: Record<string, string> = {
   aggro: "快攻", midrange: "中速", control: "控制", combo: "组合技",
 };
 
+const CLASS_GRADIENTS: Record<string, string> = {
+  warrior: "from-[#c41e3a]/20 to-transparent",
+  mage: "from-[#3fc7eb]/20 to-transparent",
+  hunter: "from-[#aad372]/20 to-transparent",
+  paladin: "from-[#f48cba]/20 to-transparent",
+  priest: "from-[#ffffff]/15 to-transparent",
+  rogue: "from-[#fff468]/15 to-transparent",
+  shaman: "from-[#0070dd]/20 to-transparent",
+  warlock: "from-[#8788ee]/20 to-transparent",
+  druid: "from-[#ff7c0a]/20 to-transparent",
+  "demon-hunter": "from-[#a330c9]/20 to-transparent",
+  "death-knight": "from-[#c41e3a]/20 to-transparent",
+};
+
+const HERO_PORTRAITS: Record<string, string> = {
+  warrior: "HERO_01", mage: "HERO_08", hunter: "HERO_05", paladin: "HERO_04",
+  priest: "HERO_09", rogue: "HERO_03", shaman: "HERO_02", warlock: "HERO_07",
+  druid: "HERO_06", "demon-hunter": "HERO_10", "death-knight": "HERO_11",
+};
+
 function getTierColor(tier: number) {
   if (tier === 1) return "tier-1";
   if (tier === 2) return "tier-2";
@@ -25,30 +45,51 @@ function getWinRateColor(wr: number) {
 }
 
 export default function DeckCard({ deck }: { deck: Deck }) {
+  const heroId = HERO_PORTRAITS[deck.hero_class];
+  const gradient = CLASS_GRADIENTS[deck.hero_class] || "from-transparent to-transparent";
+
   return (
-    <Link href={`/decks/${deck.slug}`} className="card block p-5">
-      <div className="flex items-start justify-between mb-3">
-        <div>
-          <h3 className="font-semibold text-[#e8e6e3]">{deck.title}</h3>
-          <p className="text-xs text-gray-500 mt-0.5">{deck.title_en}</p>
+    <Link href={`/decks/${deck.slug}`} className="card block relative overflow-hidden">
+      {/* Hero portrait background */}
+      {heroId && (
+        <>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={`https://art.hearthstonejson.com/v1/256x/${heroId}.jpg`}
+            alt=""
+            className="absolute right-0 top-0 w-24 h-full object-cover opacity-15"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#1a1f2e]/80 to-[#1a1f2e]" />
+        </>
+      )}
+
+      <div className={`absolute inset-0 bg-gradient-to-r ${gradient}`} />
+
+      <div className="relative p-5">
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <h3 className="font-semibold text-[#e8e6e3]">{deck.title}</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{deck.title_en}</p>
+          </div>
+          <span className={`text-xs font-bold ${getTierColor(deck.tier)} bg-[#0f1419]/60 px-2 py-0.5 rounded`}>
+            T{deck.tier}
+          </span>
         </div>
-        <span className={`text-xs font-bold ${getTierColor(deck.tier)}`}>
-          T{deck.tier}
-        </span>
-      </div>
-      <div className="flex items-center gap-3 text-xs">
-        <span className={`class-${deck.hero_class}`}>
-          {CLASS_NAMES[deck.hero_class] || deck.hero_class}
-        </span>
-        <span className="text-gray-500">
-          {ARCHETYPE_NAMES[deck.archetype] || deck.archetype}
-        </span>
-        <span className="text-gray-500">
-          💎 {deck.dust_cost.toLocaleString()}
-        </span>
-        <span className={getWinRateColor(deck.win_rate)}>
-          {deck.win_rate}%
-        </span>
+        <div className="flex items-center gap-3 text-xs">
+          <span className={`class-${deck.hero_class}`}>
+            {CLASS_NAMES[deck.hero_class] || deck.hero_class}
+          </span>
+          <span className="text-gray-500">
+            {ARCHETYPE_NAMES[deck.archetype] || deck.archetype}
+          </span>
+          <span className="text-gray-500">
+            💎 {deck.dust_cost.toLocaleString()}
+          </span>
+          <span className={getWinRateColor(deck.win_rate)}>
+            {deck.win_rate}%
+          </span>
+        </div>
       </div>
     </Link>
   );
