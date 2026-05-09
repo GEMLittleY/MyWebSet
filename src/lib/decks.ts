@@ -26,7 +26,7 @@ export type Deck = {
   created_at: string;
 };
 
-const DEMO_DECKS: Deck[] = [
+export const DEMO_DECKS: Deck[] = [
   {
     id: 1, title: "痛苦动物园", title_en: "Pain Zoo Warlock", slug: "pain-zoo-warlock",
     hero_class: "warlock", archetype: "aggro", deck_code: "AAECAf0GBseyBZXkBfH0Bf2ABvWeBu6rBgziyQT62wTb3QT03gTK8gT09QTF9gTx+AW7jAbJkAaHnAaInAYA",
