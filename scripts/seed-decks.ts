@@ -20,20 +20,6 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false },
 });
 
-const HERO_CLASS_ZH: Record<string, string> = {
-  warrior: "战士",
-  mage: "法师",
-  hunter: "猎人",
-  paladin: "圣骑士",
-  priest: "牧师",
-  rogue: "潜行者",
-  shaman: "萨满",
-  warlock: "术士",
-  druid: "德鲁伊",
-  "demon-hunter": "恶魔猎手",
-  "death-knight": "死亡骑士",
-};
-
 const ARCHETYPE_ZH: Record<string, string> = {
   aggro: "快攻",
   midrange: "中速",
@@ -41,10 +27,25 @@ const ARCHETYPE_ZH: Record<string, string> = {
   combo: "组合",
 };
 
+const MODE_ZH: Record<string, string> = {
+  standard: "标准",
+  wild: "狂野",
+};
+
+type RawCard = {
+  name: string;
+  id: string;
+  cost: number;
+  count: number;
+  rarity?: string;
+  type?: string;
+};
+
 type RawDeck = {
   url: string;
   hero_class: string;
   hero_class_zh: string;
+  game_mode: "standard" | "wild";
   title_en: string;
   archetype: string;
   archetype_label: string;
@@ -54,32 +55,83 @@ type RawDeck = {
   deck_code: string;
   format: number;
   dust_cost: number;
-  card_list: Array<{ name: string; id: string; cost: number; count: number }>;
+  card_list: RawCard[];
 };
 
-function slugFromUrl(url: string): string {
+function slugFromUrl(url: string, mode: string): string {
   const m = url.match(/\/([^/]+)\/?$/);
-  if (!m) return url;
-  // strip "-N-legend-..-score-X-Y" tail to keep slug stable across reruns
-  return m[1]!
-    .replace(/-\d+-legend-.+$/, "")
-    .replace(/-/g, "-")
-    .slice(0, 80);
+  const base = m ? m[1]!.replace(/-\d+-legend-.+$/, "") : url;
+  return `${mode}-${base}`.slice(0, 80);
+}
+
+function buildManaCurve(cards: RawCard[]): string {
+  const buckets = Array(8).fill(0);
+  for (const c of cards) {
+    const idx = Math.min(c.cost, 7);
+    buckets[idx] += c.count;
+  }
+  const max = Math.max(...buckets, 1);
+  const labels = ["0", "1", "2", "3", "4", "5", "6", "7+"];
+  return buckets
+    .map((n, i) => {
+      const bar = "█".repeat(Math.round((n / max) * 8));
+      return `${labels[i]}费 ${bar.padEnd(8)} ${n}`;
+    })
+    .join("\n");
+}
+
+function buildKeyCards(cards: RawCard[]): string {
+  const legendaries = cards.filter((c) => c.rarity === "LEGENDARY");
+  const epics = cards.filter((c) => c.rarity === "EPIC");
+  const lines: string[] = [];
+  if (legendaries.length > 0) {
+    lines.push(`**传说卡牌（${legendaries.length}）**：${legendaries.map((c) => c.name).join("、")}`);
+  }
+  if (epics.length > 0) {
+    lines.push(
+      `**史诗卡牌（${epics.length}）**：${epics.map((c) => `${c.name}×${c.count}`).join("、")}`,
+    );
+  }
+  return lines.length > 0 ? lines.join("\n\n") : "本卡组无传说/史诗核心卡。";
 }
 
 function buildGuide(d: RawDeck): string {
   const archZh = ARCHETYPE_ZH[d.archetype] ?? d.archetype;
+  const modeZh = MODE_ZH[d.game_mode] ?? d.game_mode;
+
+  let totalCost = 0;
+  let totalCount = 0;
+  for (const c of d.card_list) {
+    totalCost += c.cost * c.count;
+    totalCount += c.count;
+  }
+  const avgCost = totalCount > 0 ? (totalCost / totalCount).toFixed(2) : "0";
+
   const lines = [
     `## 卡组信息`,
     ``,
-    `- **职业**: ${d.hero_class_zh}`,
-    `- **流派**: ${d.archetype_label}（${archZh}）`,
-    `- **传说战绩**: ${(d.win_rate ?? 50).toFixed(1)}% 胜率 · ${d.total_games || "—"} 局`,
-    `- **奥术之尘**: ${d.dust_cost.toLocaleString()}`,
+    `| | |`,
+    `|---|---|`,
+    `| 模式 | ${modeZh}（${d.game_mode}）|`,
+    `| 职业 | ${d.hero_class_zh} |`,
+    `| 流派 | ${d.archetype_label}（${archZh}）|`,
+    `| 平均费用 | ${avgCost} |`,
+    `| 实战胜率 | ${(d.win_rate ?? 50).toFixed(1)}%（${d.total_games || "—"} 局）|`,
+    `| 合成尘埃 | ${d.dust_cost.toLocaleString()} |`,
+    ``,
+    `## 核心卡牌`,
+    ``,
+    buildKeyCards(d.card_list),
+    ``,
+    `## 费用曲线`,
+    ``,
+    "```",
+    buildManaCurve(d.card_list),
+    "```",
     ``,
     `## 数据来源`,
     ``,
-    `本卡组来自 [hearthstone-decks.net](${d.url}) 玩家提交的传说前 500 名实战记录。`,
+    `本卡组来自 [hearthstone-decks.net](${d.url}) 玩家提交的传说前 500 名实战记录。详细打法、起手留牌、对阵策略请参考原页面或观看高分玩家直播。`,
     ``,
     `## 卡组分享码`,
     ``,
@@ -100,7 +152,10 @@ function loadDecks(): Array<Omit<Deck, "id">> {
   const rawPath = resolve(process.cwd(), "data/decks-raw.json");
   if (!existsSync(rawPath)) {
     console.log("data/decks-raw.json not found, falling back to DEMO_DECKS");
-    return DEMO_DECKS.map(({ id: _id, ...rest }) => rest);
+    return DEMO_DECKS.map(({ id: _id, ...rest }) => ({
+      ...rest,
+      game_mode: "standard" as const,
+    }));
   }
 
   const raws = JSON.parse(readFileSync(rawPath, "utf8")) as RawDeck[];
@@ -108,9 +163,10 @@ function loadDecks(): Array<Omit<Deck, "id">> {
 
   const seen = new Set<string>();
   return raws.map((d) => {
-    let slug = slugFromUrl(d.url);
+    let slug = slugFromUrl(d.url, d.game_mode);
     let i = 2;
-    while (seen.has(slug)) slug = `${slugFromUrl(d.url)}-${i++}`;
+    const base = slug;
+    while (seen.has(slug)) slug = `${base}-${i++}`;
     seen.add(slug);
 
     return {
@@ -118,6 +174,7 @@ function loadDecks(): Array<Omit<Deck, "id">> {
       title_en: d.title_en,
       slug,
       hero_class: d.hero_class,
+      game_mode: d.game_mode,
       archetype: d.archetype,
       deck_code: d.deck_code,
       dust_cost: d.dust_cost,
@@ -153,7 +210,9 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`Successfully seeded ${rows.length} decks`);
+  console.log(
+    `Successfully seeded ${rows.length} decks (standard: ${rows.filter((r) => r.game_mode === "standard").length}, wild: ${rows.filter((r) => r.game_mode === "wild").length})`,
+  );
 }
 
 main().catch((e) => {

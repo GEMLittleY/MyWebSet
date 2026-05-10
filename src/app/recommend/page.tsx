@@ -140,7 +140,7 @@ export default function RecommendPage() {
           <h2 className="text-xl font-semibold gold-text mb-4">推荐结果</h2>
           {results.length === 0 ? (
             <p className="text-gray-500 card p-6 text-center">
-              暂无符合条件的卡组，试试调高预算或选择"不限"职业
+              暂无符合条件的卡组，试试调高预算或选择「不限」职业
             </p>
           ) : (
             <div className="space-y-4">

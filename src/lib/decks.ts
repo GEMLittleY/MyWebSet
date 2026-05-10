@@ -14,6 +14,8 @@ export type Deck = {
   title_en: string;
   slug: string;
   hero_class: string;
+  /** "standard" | "wild" — defaults to "standard" if Supabase row lacks it. */
+  game_mode?: "standard" | "wild";
   archetype: string;
   deck_code: string;
   dust_cost: number;

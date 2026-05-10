@@ -101,3 +101,14 @@ body {
 .win-rate-good { color: #4ade80; }
 .win-rate-ok { color: #fbbf24; }
 .win-rate-bad { color: #f87171; }
+
+.scrollbar-thin::-webkit-scrollbar { height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--card-border);
+  border-radius: 2px;
+}
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: var(--card-border) transparent; }
+
+.prose table { width: 100%; border-collapse: collapse; margin-bottom: 1.25rem; }
+.prose th, .prose td { border: 1px solid var(--card-border); padding: 0.5rem 0.75rem; text-align: left; }
+.prose th { background: var(--card-bg); color: var(--accent-gold); font-weight: 600; }

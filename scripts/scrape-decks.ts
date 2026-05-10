@@ -1,4 +1,4 @@
-// Scrape current Top 500 Legend Standard decks from hearthstone-decks.net,
+// Scrape current Top 500 Legend decks (Standard + Wild) from hearthstone-decks.net,
 // decode their deckstrings, and emit data/decks-raw.json with full metadata.
 
 import { writeFileSync, readFileSync, mkdirSync } from "node:fs";
@@ -9,20 +9,20 @@ const SITE = "https://hearthstone-decks.net";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36";
 
 const HERO_CLASSES = [
-  { slug: "death-knight-standard", id: "death-knight" },
-  { slug: "demon-hunter", id: "demon-hunter" },
-  { slug: "druid", id: "druid" },
-  { slug: "hunter", id: "hunter" },
-  { slug: "mage", id: "mage" },
-  { slug: "paladin", id: "paladin" },
-  { slug: "priest", id: "priest" },
-  { slug: "rogue", id: "rogue" },
-  { slug: "shaman", id: "shaman" },
-  { slug: "warlock", id: "warlock" },
-  { slug: "warrior", id: "warrior" },
+  { id: "death-knight", standardSlug: "death-knight-standard", wildSlug: "death-knight-wild" },
+  { id: "demon-hunter", standardSlug: "demon-hunter", wildSlug: "demon-hunter-wild-decks" },
+  { id: "druid", standardSlug: "druid", wildSlug: "druid-wild-decks" },
+  { id: "hunter", standardSlug: "hunter", wildSlug: "hunter-wild-decks" },
+  { id: "mage", standardSlug: "mage", wildSlug: "mage-wild-decks" },
+  { id: "paladin", standardSlug: "paladin", wildSlug: "paladin-wild-decks" },
+  { id: "priest", standardSlug: "priest", wildSlug: "priest-wild-decks" },
+  { id: "rogue", standardSlug: "rogue", wildSlug: "rogue-wild-decks" },
+  { id: "shaman", standardSlug: "shaman", wildSlug: "shaman-wild-decks" },
+  { id: "warlock", standardSlug: "warlock", wildSlug: "warlock-wild-decks" },
+  { id: "warrior", standardSlug: "warrior", wildSlug: "warrior-wild-decks" },
 ] as const;
 
-const PER_CLASS = 2;
+const PER_CLASS_PER_MODE = 2;
 const REQUEST_DELAY_MS = 500;
 
 type IndexedCard = {
@@ -44,9 +44,12 @@ async function delay(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function fetchHtml(url: string): Promise<string> {
+async function fetchHtml(url: string): Promise<string | null> {
   const res = await fetch(url, { headers: { "User-Agent": UA } });
-  if (!res.ok) throw new Error(`${url} HTTP ${res.status}`);
+  if (!res.ok) {
+    if (res.status === 404) return null;
+    throw new Error(`${url} HTTP ${res.status}`);
+  }
   return res.text();
 }
 
@@ -60,9 +63,10 @@ function decodeEntities(s: string): string {
 
 type DeckLink = { url: string; title: string };
 
-async function listDecksByClass(classSlug: string): Promise<DeckLink[]> {
-  const url = `${SITE}/standard-decks/${classSlug}/`;
+async function listDecks(modeSlug: string, classSlug: string): Promise<DeckLink[]> {
+  const url = `${SITE}/${modeSlug}/${classSlug}/`;
   const html = await fetchHtml(url);
+  if (!html) return [];
   const matches = [
     ...html.matchAll(
       /<h3[^>]*>\s*<a[^>]+href="(https:\/\/hearthstone-decks\.net\/[^"]+)"[^>]*>([^<]+)<\/a>\s*<\/h3>/g,
@@ -86,6 +90,7 @@ type DeckPage = {
 
 async function fetchDeckPage(link: DeckLink): Promise<DeckPage | null> {
   const html = await fetchHtml(link.url);
+  if (!html) return null;
   const codeMatch = html.match(/<input[^>]+id="Code1"[^>]+value="([^"]+)"/);
   if (!codeMatch) return null;
 
@@ -109,7 +114,18 @@ const RARITY_DUST: Record<string, number> = {
   FREE: 0,
 };
 
-function classifyArchetype(deckCards: Array<{ cost?: number; count: number }>): string {
+// Archetype classification: keyword match first, fall back to mana curve heuristic.
+const ARCHETYPE_KEYWORDS: Array<[RegExp, string]> = [
+  [/\b(quest|otk|combo|reno|odyn|quasar|imbue|merithra|divergence|hand)\b/i, "combo"],
+  [/\b(aggro|token|pirate|face|burn|egg|dude|zoo)\b/i, "aggro"],
+  [/\b(control|big|reno|wall|highlander)\b/i, "control"],
+  [/\b(midrange|mid|secret|herald|companion|dragon|defense|terran|bbu|unholy)\b/i, "midrange"],
+];
+
+function classifyArchetype(label: string, deckCards: Array<{ cost?: number; count: number }>): string {
+  for (const [re, archetype] of ARCHETYPE_KEYWORDS) {
+    if (re.test(label)) return archetype;
+  }
   let totalCost = 0;
   let totalCount = 0;
   for (const c of deckCards) {
@@ -123,10 +139,9 @@ function classifyArchetype(deckCards: Array<{ cost?: number; count: number }>): 
   return "control";
 }
 
-// Strip "#xxx Legend - <author> (Score: ..)" tail from title to get archetype.
+// Strip "#xxx Legend - <author> (Score: ..)" tail and trailing class name.
 function extractArchetypeName(title: string, classId: string): string {
   let s = title.replace(/\s*#\d+\s+Legend\s+[-–].*$/i, "").trim();
-  // Remove trailing class name (case-insensitive)
   const classWord = classId.replace(/-/g, " ");
   const re = new RegExp(`\\s+${classWord.split(" ").join("\\s+")}\\s*$`, "i");
   s = s.replace(re, "").trim();
@@ -147,10 +162,20 @@ const HERO_CLASS_ZH: Record<string, string> = {
   "death-knight": "死亡骑士",
 };
 
+type EnrichedCard = {
+  name: string;
+  id: string;
+  cost: number;
+  count: number;
+  rarity: string;
+  type: string;
+};
+
 type RawDeck = {
   url: string;
   hero_class: string;
   hero_class_zh: string;
+  game_mode: "standard" | "wild";
   title_en: string;
   archetype: string;
   archetype_label: string;
@@ -160,15 +185,23 @@ type RawDeck = {
   deck_code: string;
   format: number;
   dust_cost: number;
-  card_list: Array<{ name: string; id: string; cost: number; count: number }>;
+  card_list: EnrichedCard[];
 };
 
-async function main() {
-  const out: RawDeck[] = [];
+async function scrapeMode(
+  mode: "standard" | "wild",
+  modeSlug: string,
+  out: RawDeck[],
+) {
   for (const cls of HERO_CLASSES) {
-    console.log(`\n[${cls.id}] listing...`);
-    const links = await listDecksByClass(cls.slug);
-    console.log(`  found ${links.length} entries`);
+    const classSlug = mode === "standard" ? cls.standardSlug : cls.wildSlug;
+    console.log(`\n[${mode}/${cls.id}] listing ${classSlug}...`);
+    const links = await listDecks(modeSlug, classSlug);
+    if (links.length === 0) {
+      console.log(`  (no entries — slug may not exist)`);
+      continue;
+    }
+    console.log(`  found ${links.length}`);
 
     const seenArchetype = new Set<string>();
     const picked: DeckLink[] = [];
@@ -177,7 +210,7 @@ async function main() {
       if (seenArchetype.has(arch)) continue;
       seenArchetype.add(arch);
       picked.push(l);
-      if (picked.length >= PER_CLASS) break;
+      if (picked.length >= PER_CLASS_PER_MODE) break;
     }
 
     for (const link of picked) {
@@ -191,7 +224,7 @@ async function main() {
         }
 
         const decoded = decodeDeckstring(page.deckCode);
-        const cardList = decoded.cards
+        const cardList: EnrichedCard[] = decoded.cards
           .map((c) => {
             const card = byDbf.get(c.dbfId);
             return {
@@ -199,6 +232,8 @@ async function main() {
               id: card?.id ?? "",
               cost: card?.cost ?? 0,
               count: c.count,
+              rarity: card?.rarity ?? "",
+              type: card?.type ?? "",
             };
           })
           .filter((c) => c.id !== "")
@@ -210,7 +245,7 @@ async function main() {
         }, 0);
 
         const archetypeLabel = extractArchetypeName(link.title, cls.id);
-        const archetype = classifyArchetype(cardList);
+        const archetype = classifyArchetype(archetypeLabel, cardList);
 
         const winRate = page.winPct ?? 50;
         let tier = 3;
@@ -221,6 +256,7 @@ async function main() {
           url: page.url,
           hero_class: cls.id,
           hero_class_zh: HERO_CLASS_ZH[cls.id]!,
+          game_mode: mode,
           title_en: archetypeLabel + " " + cls.id.replace(/-/g, " "),
           archetype,
           archetype_label: archetypeLabel,
@@ -233,18 +269,26 @@ async function main() {
           card_list: cardList,
         });
         console.log(
-          `     ✓ ${cardList.reduce((s, c) => s + c.count, 0)} cards, ${dustCost} dust, ${winRate}% over ${page.totalGames}`,
+          `     ✓ ${cardList.reduce((s, c) => s + c.count, 0)} cards · ${dustCost} dust · ${winRate}%/${page.totalGames ?? "?"}局 · ${archetype}`,
         );
       } catch (e) {
         console.log("     [error]", (e as Error).message);
       }
     }
   }
+}
+
+async function main() {
+  const out: RawDeck[] = [];
+  await scrapeMode("standard", "standard-decks", out);
+  await scrapeMode("wild", "wild-decks", out);
 
   const outPath = resolve(process.cwd(), "data/decks-raw.json");
   mkdirSync(dirname(outPath), { recursive: true });
   writeFileSync(outPath, JSON.stringify(out, null, 2));
-  console.log(`\nWrote ${out.length} decks to ${outPath}`);
+  console.log(
+    `\nWrote ${out.length} decks (standard: ${out.filter((d) => d.game_mode === "standard").length}, wild: ${out.filter((d) => d.game_mode === "wild").length}) to ${outPath}`,
+  );
 }
 
 main().catch((e) => {

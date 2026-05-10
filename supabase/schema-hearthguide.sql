@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS decks (
   title_en TEXT DEFAULT '',
   slug TEXT NOT NULL UNIQUE,
   hero_class TEXT NOT NULL,
+  game_mode TEXT NOT NULL DEFAULT 'standard',
   archetype TEXT NOT NULL DEFAULT 'midrange',
   deck_code TEXT NOT NULL DEFAULT '',
   dust_cost INT DEFAULT 0,
@@ -23,6 +24,9 @@ CREATE TABLE IF NOT EXISTS decks (
   published_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- 已有部署：补加 game_mode 列（幂等）
+ALTER TABLE decks ADD COLUMN IF NOT EXISTS game_mode TEXT NOT NULL DEFAULT 'standard';
 
 -- 3. RLS 策略
 ALTER TABLE decks ENABLE ROW LEVEL SECURITY;

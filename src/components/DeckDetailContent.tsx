@@ -18,6 +18,11 @@ const HERO_PORTRAITS: Record<string, string> = {
   druid: "HERO_06", "demon-hunter": "HERO_10", "death-knight": "HERO_11",
 };
 
+const MODE_NAMES: Record<string, string> = {
+  standard: "标准",
+  wild: "狂野",
+};
+
 export default function DeckDetailContent({ deck }: { deck: Deck }) {
   const [copied, setCopied] = useState(false);
 
@@ -38,15 +43,19 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
   const totalCards = manaCurve.reduce((a, b) => a + b, 0);
 
   const heroPortrait = HERO_PORTRAITS[deck.hero_class];
+  const modeLabel = MODE_NAMES[deck.game_mode ?? "standard"] ?? "标准";
+
+  const matchupEntries = Object.entries(deck.matchups || {});
+  const hasMatchups = matchupEntries.length > 0;
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
       <Link href="/decks" className="text-sm text-gray-500 hover:text-[#f0b232] transition-colors">
         ← 返回卡组库
       </Link>
 
       {/* Hero Banner */}
-      <div className="mt-6 mb-8 relative overflow-hidden rounded-xl">
+      <div className="mt-4 sm:mt-6 mb-6 sm:mb-8 relative overflow-hidden rounded-xl">
         <div className="absolute inset-0 z-0 opacity-20">
           {heroPortrait && (
             // eslint-disable-next-line @next/next/no-img-element
@@ -59,59 +68,62 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
           )}
         </div>
         <div className="absolute inset-0 z-0 bg-gradient-to-r from-[#1a1f2e] via-[#1a1f2e]/90 to-transparent" />
-        <div className="relative z-10 p-6">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="relative z-10 p-4 sm:p-6">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className={`text-xs font-bold tier-${deck.tier} bg-[#0f1419]/60 px-2 py-0.5 rounded`}>T{deck.tier}</span>
             <span className={`text-xs class-${deck.hero_class} bg-[#0f1419]/60 px-2 py-0.5 rounded`}>
               {CLASS_NAMES[deck.hero_class] || deck.hero_class}
             </span>
+            <span className="text-xs text-[#4fc3f7] bg-[#0f1419]/60 px-2 py-0.5 rounded border border-[#4fc3f7]/30">
+              {modeLabel}
+            </span>
           </div>
-          <h1 className="text-3xl font-bold text-[#e8e6e3]">{deck.title}</h1>
-          <p className="text-sm text-gray-500 mt-1">{deck.title_en}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e6e3]">{deck.title}</h1>
+          <p className="text-xs sm:text-sm text-gray-500 mt-1">{deck.title_en}</p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-8">
-        <div className="card p-4 text-center">
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
+        <div className="card p-3 sm:p-4 text-center">
           <div className="text-xs text-gray-500">胜率</div>
-          <div className={`text-xl font-bold ${deck.win_rate >= 55 ? "win-rate-good" : deck.win_rate >= 50 ? "win-rate-ok" : "win-rate-bad"}`}>
+          <div className={`text-lg sm:text-xl font-bold ${deck.win_rate >= 55 ? "win-rate-good" : deck.win_rate >= 50 ? "win-rate-ok" : "win-rate-bad"}`}>
             {deck.win_rate}%
           </div>
         </div>
-        <div className="card p-4 text-center">
+        <div className="card p-3 sm:p-4 text-center">
           <div className="text-xs text-gray-500">合成费用</div>
-          <div className="text-xl font-bold text-[#4fc3f7]">💎 {deck.dust_cost.toLocaleString()}</div>
+          <div className="text-lg sm:text-xl font-bold text-[#4fc3f7]">💎 {deck.dust_cost.toLocaleString()}</div>
         </div>
-        <div className="card p-4 text-center">
+        <div className="card p-3 sm:p-4 text-center">
           <div className="text-xs text-gray-500">强度</div>
-          <div className={`text-xl font-bold tier-${deck.tier}`}>Tier {deck.tier}</div>
+          <div className={`text-lg sm:text-xl font-bold tier-${deck.tier}`}>Tier {deck.tier}</div>
         </div>
       </div>
 
       {/* Deck Code */}
-      <div className="card p-4 mb-8">
-        <div className="flex items-center justify-between">
-          <code className="text-xs text-gray-400 truncate flex-1 mr-4">
+      <div className="card p-3 sm:p-4 mb-6 sm:mb-8">
+        <div className="flex items-center justify-between gap-3">
+          <code className="text-xs text-gray-400 truncate flex-1">
             {deck.deck_code}
           </code>
           <button
             onClick={copyDeckCode}
-            className="px-4 py-2 rounded-lg bg-[#f0b232] text-[#0f1419] text-sm font-medium hover:bg-[#d4982a] transition-colors whitespace-nowrap"
+            className="px-3 sm:px-4 py-2 rounded-lg bg-[#f0b232] text-[#0f1419] text-xs sm:text-sm font-medium hover:bg-[#d4982a] transition-colors whitespace-nowrap"
           >
             {copied ? "已复制！" : "复制代码"}
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+      <div className={`grid grid-cols-1 ${hasMatchups ? "md:grid-cols-2" : ""} gap-6 sm:gap-8 mb-6 sm:mb-8`}>
         {/* Mana Curve */}
-        <div className="card p-5">
+        <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold gold-text">费用曲线</h3>
             <span className="text-xs text-gray-500">共 {totalCards} 张</span>
           </div>
-          <div className="flex items-end gap-1.5 h-36">
+          <div className="flex items-end gap-1 sm:gap-1.5 h-36">
             {manaCurve.map((count, i) => (
               <div key={i} className="flex-1 flex flex-col items-center group relative">
                 <span className={`text-xs font-bold mb-1 ${count > 0 ? "text-[#4fc3f7]" : "text-gray-600"}`}>
@@ -146,35 +158,37 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
           </div>
         </div>
 
-        {/* Matchups */}
-        <div className="card p-5">
-          <h3 className="font-semibold gold-text mb-4">对阵胜率</h3>
-          <div className="space-y-2">
-            {Object.entries(deck.matchups || {}).map(([cls, wr]) => (
-              <div key={cls} className="flex items-center gap-2 text-xs">
-                <span className={`w-16 class-${cls}`}>{CLASS_NAMES[cls] || cls}</span>
-                <div className="flex-1 h-2 bg-[#2a3040] rounded overflow-hidden">
-                  <div
-                    className={`h-full rounded ${Number(wr) >= 55 ? "bg-green-500" : Number(wr) >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
-                    style={{ width: `${wr}%` }}
-                  />
+        {/* Matchups (only when data exists) */}
+        {hasMatchups && (
+          <div className="card p-4 sm:p-5">
+            <h3 className="font-semibold gold-text mb-4">对阵胜率</h3>
+            <div className="space-y-2">
+              {matchupEntries.map(([cls, wr]) => (
+                <div key={cls} className="flex items-center gap-2 text-xs">
+                  <span className={`w-16 class-${cls}`}>{CLASS_NAMES[cls] || cls}</span>
+                  <div className="flex-1 h-2 bg-[#2a3040] rounded overflow-hidden">
+                    <div
+                      className={`h-full rounded ${Number(wr) >= 55 ? "bg-green-500" : Number(wr) >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
+                      style={{ width: `${wr}%` }}
+                    />
+                  </div>
+                  <span className={`w-10 text-right ${Number(wr) >= 55 ? "win-rate-good" : Number(wr) >= 50 ? "win-rate-ok" : "win-rate-bad"}`}>
+                    {wr}%
+                  </span>
                 </div>
-                <span className={`w-10 text-right ${Number(wr) >= 55 ? "win-rate-good" : Number(wr) >= 50 ? "win-rate-ok" : "win-rate-bad"}`}>
-                  {wr}%
-                </span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Card List */}
-      <div className="card p-5 mb-8">
+      <div className="card p-4 sm:p-5 mb-6 sm:mb-8">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold gold-text">卡牌列表</h3>
           <span className="text-xs text-gray-500">{totalCards} 张卡牌</span>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
           {[...(deck.card_list || [])].sort((a, b) => a.cost - b.cost).map((card, i) => (
             <CardImage
               key={i}
@@ -185,11 +199,14 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
             />
           ))}
         </div>
+        <p className="text-[11px] text-gray-500 mt-3 sm:hidden">
+          点击卡牌查看大图
+        </p>
       </div>
 
       {/* Guide */}
       {deck.guide && (
-        <div className="card p-6">
+        <div className="card p-4 sm:p-6">
           <h3 className="font-semibold gold-text mb-4">使用攻略</h3>
           <MarkdownRenderer content={deck.guide} />
         </div>
