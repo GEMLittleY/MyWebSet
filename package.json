@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:decks": "tsx --env-file=.env.local scripts/seed-decks.ts"
+    "seed:decks": "tsx --env-file=.env.local scripts/seed-decks.ts",
+    "cards:fetch": "tsx scripts/fetch-cards-index.ts",
+    "decks:validate": "tsx scripts/validate-decks.ts",
+    "decks:scrape": "tsx scripts/scrape-decks.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
