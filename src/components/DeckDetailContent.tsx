@@ -28,6 +28,7 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
   const { t, lang, localePath } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const copyDeckCode = () => {
     navigator.clipboard.writeText(deck.deck_code);
@@ -35,24 +36,51 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const shareTitle = lang === "zh" ? deck.title : deck.title_en || deck.title;
+
   const handleShare = async () => {
     const url = window.location.href;
-    const title = lang === "zh" ? deck.title : deck.title_en || deck.title;
     try {
       if (typeof navigator !== "undefined" && "share" in navigator) {
-        await navigator.share({ title, url });
+        await navigator.share({ title: shareTitle, url });
         return;
       }
     } catch {
-      // user cancelled — fall through to clipboard fallback
+      // user cancelled — fall through to popover
     }
+    setShareOpen((v) => !v);
+  };
+
+  const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(window.location.href);
       setShareCopied(true);
       setTimeout(() => setShareCopied(false), 2000);
     } catch {
-      // last resort: do nothing
+      // ignore
     }
+  };
+
+  const shareTwitter = () => {
+    const u = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(
+      `${shareTitle} · ${deck.win_rate}% WR · T${deck.tier}`,
+    );
+    window.open(
+      `https://twitter.com/intent/tweet?text=${text}&url=${u}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
+  const shareReddit = () => {
+    const u = encodeURIComponent(window.location.href);
+    const t2 = encodeURIComponent(shareTitle);
+    window.open(
+      `https://www.reddit.com/submit?url=${u}&title=${t2}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
 
   const manaCurve: number[] = Array(8).fill(0);
@@ -151,7 +179,7 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
           <code className="text-xs text-gray-400 truncate flex-1 min-w-0">
             {deck.deck_code}
           </code>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-2 shrink-0 relative">
             <button
               type="button"
               onClick={handleShare}
@@ -184,6 +212,32 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
             >
               {copied ? t.decks.copied : t.decks.copyCode}
             </button>
+
+            {shareOpen && (
+              <div className="absolute right-0 top-full mt-2 z-30 card p-2 min-w-[180px] flex flex-col gap-1">
+                <button
+                  type="button"
+                  onClick={() => { shareTwitter(); setShareOpen(false); }}
+                  className="text-left text-xs text-gray-300 hover:text-[#4fc3f7] hover:bg-[#0f1419] rounded px-2 py-1.5"
+                >
+                  {lang === "en" ? "Share on X / Twitter" : "分享到 X / Twitter"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { shareReddit(); setShareOpen(false); }}
+                  className="text-left text-xs text-gray-300 hover:text-[#ff4500] hover:bg-[#0f1419] rounded px-2 py-1.5"
+                >
+                  {lang === "en" ? "Share on Reddit" : "分享到 Reddit"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { copyLink(); setShareOpen(false); }}
+                  className="text-left text-xs text-gray-300 hover:text-[#f0b232] hover:bg-[#0f1419] rounded px-2 py-1.5"
+                >
+                  {lang === "en" ? "Copy link" : "复制链接"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

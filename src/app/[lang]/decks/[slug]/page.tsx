@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import DeckDetailContent from "@/components/DeckDetailContent";
 import JsonLd from "@/components/JsonLd";
-import { getDict, type Lang } from "@/lib/i18n";
+import { type Lang } from "@/lib/i18n";
+import { getDict } from "@/lib/i18n";
 
 export const revalidate = 60;
 
@@ -13,41 +14,12 @@ type Props = {
   params: Promise<{ lang: string; slug: string }>;
 };
 
-function ogImageFor(deck: NonNullable<Awaited<ReturnType<typeof getDeckBySlug>>>, lang: Lang): string {
-  const t = getDict(lang);
-  const classZh: Record<string, string> = {
-    warrior: "战士",
-    mage: "法师",
-    hunter: "猎人",
-    paladin: "圣骑士",
-    priest: "牧师",
-    rogue: "潜行者",
-    shaman: "萨满",
-    warlock: "术士",
-    druid: "德鲁伊",
-    "demon-hunter": "恶魔猎手",
-    "death-knight": "死亡骑士",
-  };
-  const title = lang === "zh" ? deck.title : deck.title_en || deck.title;
-  const subtitle = lang === "zh" ? deck.title_en : deck.title;
-  const klass =
-    lang === "zh"
-      ? classZh[deck.hero_class] ?? deck.hero_class
-      : (t.classes as Record<string, string>)[deck.hero_class] ?? deck.hero_class;
-  const mode =
-    (deck.game_mode ?? "standard") === "wild"
-      ? t.decks.modeWild
-      : t.decks.modeStandard;
-
-  const params = new URLSearchParams({
-    title,
-    subtitle: subtitle && subtitle !== title ? subtitle : "",
-    tier: String(deck.tier),
-    wr: String(deck.win_rate),
-    class: klass,
-    mode,
-  });
-  return `${SITE_URL}/api/og?${params.toString()}`;
+function ogImageFor(
+  deck: NonNullable<Awaited<ReturnType<typeof getDeckBySlug>>>,
+  lang: Lang,
+): string {
+  const params = new URLSearchParams({ slug: deck.slug, lang });
+  return `${SITE_URL}/api/og/deck?${params.toString()}`;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
