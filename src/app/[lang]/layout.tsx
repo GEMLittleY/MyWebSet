@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import JsonLd from "@/components/JsonLd";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { getDict, type Lang } from "@/lib/i18n";
 import "../globals.css";
@@ -65,12 +66,29 @@ export default async function LangLayout({
   if (lang !== "en" && lang !== "zh") notFound();
   const typedLang = lang as Lang;
 
+  const orgLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "HearthGuide",
+    url: SITE_URL,
+    logo: `${SITE_URL}/favicon.ico`,
+    sameAs: [],
+  };
+  const siteLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "HearthGuide",
+    url: SITE_URL,
+    inLanguage: typedLang === "zh" ? "zh-CN" : "en",
+  };
+
   return (
     <html
       lang={typedLang === "zh" ? "zh-CN" : "en"}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#0f1419] text-[#e8e6e3]">
+        <JsonLd data={[orgLd, siteLd]} />
         <LanguageProvider lang={typedLang}>
           <Header />
           <main className="flex-1">{children}</main>

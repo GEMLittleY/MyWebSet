@@ -33,6 +33,15 @@ const dict = {
       matchups: "对阵分析",
       manaCurve: "费用曲线",
       cardList: "卡牌列表",
+      back: "← 返回卡组库",
+      search: "搜索卡组、archetype、职业…",
+      sort: "排序",
+      sortByWinRate: "按胜率",
+      sortByDust: "按造价",
+      sortByTier: "按强度",
+      noResults: "暂无符合条件的卡组",
+      share: "分享",
+      shareCopied: "链接已复制",
     },
     guides: {
       title: "攻略文章",
@@ -109,6 +118,15 @@ const dict = {
       matchups: "Matchups",
       manaCurve: "Mana Curve",
       cardList: "Card List",
+      back: "← Back to decks",
+      search: "Search decks, archetypes, classes…",
+      sort: "Sort",
+      sortByWinRate: "By Win Rate",
+      sortByDust: "By Dust",
+      sortByTier: "By Tier",
+      noResults: "No decks match your filters",
+      share: "Share",
+      shareCopied: "Link copied",
     },
     guides: {
       title: "Strategy Guides",
@@ -122,7 +140,7 @@ const dict = {
     },
     recommend: {
       title: "AI Deck Picker",
-      desc: "Tell us about your situation and AI will recommend the best decks",
+      desc: "Tell us about your situation and we will recommend the best decks",
       rank: "Your Rank",
       preferClass: "Preferred Class",
       budget: "Dust Budget",
@@ -156,9 +174,9 @@ const dict = {
 } as const;
 
 export function getDict(lang: Lang) {
-  return dict[lang] || dict.zh;
+  return dict[lang] || dict.en;
 }
 
 export function getLangFromParams(searchParams: { lang?: string }): Lang {
-  return searchParams?.lang === "en" ? "en" : "zh";
+  return searchParams?.lang === "zh" ? "zh" : "en";
 }

@@ -27,11 +27,32 @@ const MODE_NAMES: Record<string, string> = {
 export default function DeckDetailContent({ deck }: { deck: Deck }) {
   const { t, lang, localePath } = useLanguage();
   const [copied, setCopied] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   const copyDeckCode = () => {
     navigator.clipboard.writeText(deck.deck_code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = lang === "zh" ? deck.title : deck.title_en || deck.title;
+    try {
+      if (typeof navigator !== "undefined" && "share" in navigator) {
+        await navigator.share({ title, url });
+        return;
+      }
+    } catch {
+      // user cancelled — fall through to clipboard fallback
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareCopied(true);
+      setTimeout(() => setShareCopied(false), 2000);
+    } catch {
+      // last resort: do nothing
+    }
   };
 
   const manaCurve: number[] = Array(8).fill(0);
@@ -124,18 +145,46 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
         </div>
       </div>
 
-      {/* Deck Code */}
+      {/* Deck Code + Share */}
       <div className="card p-3 sm:p-4 mb-6 sm:mb-8">
-        <div className="flex items-center justify-between gap-3">
-          <code className="text-xs text-gray-400 truncate flex-1">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <code className="text-xs text-gray-400 truncate flex-1 min-w-0">
             {deck.deck_code}
           </code>
-          <button
-            onClick={copyDeckCode}
-            className="px-3 sm:px-4 py-2 rounded-lg bg-[#f0b232] text-[#0f1419] text-xs sm:text-sm font-medium hover:bg-[#d4982a] transition-colors whitespace-nowrap"
-          >
-            {copied ? t.decks.copied : t.decks.copyCode}
-          </button>
+          <div className="flex gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="px-3 sm:px-4 py-2 rounded-lg bg-[#1a1f2e] border border-[#2a3040] text-gray-300 text-xs sm:text-sm font-medium hover:border-[#4fc3f7] hover:text-[#4fc3f7] transition-colors whitespace-nowrap inline-flex items-center gap-1.5"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+              </svg>
+              {shareCopied ? t.decks.shareCopied : t.decks.share}
+            </button>
+            <button
+              type="button"
+              onClick={copyDeckCode}
+              className="px-3 sm:px-4 py-2 rounded-lg bg-[#f0b232] text-[#0f1419] text-xs sm:text-sm font-medium hover:bg-[#d4982a] transition-colors whitespace-nowrap"
+            >
+              {copied ? t.decks.copied : t.decks.copyCode}
+            </button>
+          </div>
         </div>
       </div>
 
