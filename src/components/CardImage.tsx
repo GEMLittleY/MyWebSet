@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const RENDER_URL = (id: string) =>
   `https://art.hearthstonejson.com/v1/render/latest/zhCN/256x/${id}.png`;
 const RENDER_URL_LARGE = (id: string) =>
   `https://art.hearthstonejson.com/v1/render/latest/zhCN/512x/${id}.png`;
+
+// Desktop-only: how long the mouse must dwell on a card before the
+// hover preview fades in. Prevents flicker when sweeping past a row.
+const HOVER_OPEN_DELAY_MS = 180;
 
 export default function CardImage({
   cardId,
@@ -18,22 +23,59 @@ export default function CardImage({
   cost: number;
   count: number;
 }) {
-  const [showPreview, setShowPreview] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [hoverPreview, setHoverPreview] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Lightbox: lock body scroll + close on Escape.
   useEffect(() => {
-    if (!open) return;
+    if (!lightbox) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") setLightbox(false);
     };
     document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.body.style.overflow = prev;
     };
-  }, [open]);
+  }, [lightbox]);
+
+  // Hover preview: dismiss whenever the page scrolls so the floating
+  // image never "sticks" while the user moves around the deck list.
+  useEffect(() => {
+    if (!hoverPreview) return;
+    const dismiss = () => setHoverPreview(false);
+    window.addEventListener("scroll", dismiss, { passive: true });
+    window.addEventListener("wheel", dismiss, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", dismiss);
+      window.removeEventListener("wheel", dismiss);
+    };
+  }, [hoverPreview]);
+
+  // Clean up any pending hover timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    };
+  }, []);
+
+  const openHover = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setHoverPreview(true);
+    }, HOVER_OPEN_DELAY_MS);
+  };
+  const closeHover = () => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+    setHoverPreview(false);
+  };
 
   if (!cardId || imgError) {
     return (
@@ -53,74 +95,97 @@ export default function CardImage({
     <>
       <button
         type="button"
-        className="relative group cursor-zoom-in block w-full text-left"
-        onMouseEnter={() => setShowPreview(true)}
-        onMouseLeave={() => setShowPreview(false)}
-        onClick={() => setOpen(true)}
+        className="relative block w-full text-left rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#f0b232] transition-shadow hover:shadow-[0_6px_20px_rgba(0,0,0,0.45)]"
+        onMouseEnter={openHover}
+        onMouseLeave={closeHover}
+        onFocus={openHover}
+        onBlur={closeHover}
+        onClick={() => {
+          closeHover();
+          setLightbox(true);
+        }}
         aria-label={`查看 ${name} 大图`}
       >
-        <div className="transition-transform group-hover:scale-105 group-hover:z-10">
+        <div className="relative">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={RENDER_URL(cardId)}
             alt={name}
-            className="w-full h-auto drop-shadow-lg"
+            className="w-full h-auto drop-shadow-lg select-none"
             onError={() => setImgError(true)}
             loading="lazy"
+            draggable={false}
           />
           {count > 1 && (
-            <div className="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-[#f0b232] text-[#0f1419] text-xs font-bold shadow-lg">
+            <div className="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-[#f0b232] text-[#0f1419] text-xs font-bold shadow-lg pointer-events-none">
               {count}
             </div>
           )}
         </div>
-
-        {/* Desktop hover preview */}
-        {showPreview && !open && (
-          <div className="fixed z-[90] pointer-events-none top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:block">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={RENDER_URL_LARGE(cardId)}
-              alt={name}
-              className="w-[300px] drop-shadow-[0_8px_30px_rgba(0,0,0,0.7)]"
-            />
-          </div>
-        )}
       </button>
 
-      {/* Click lightbox (works on mobile + desktop) */}
-      {open && (
-        <div
-          className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setOpen(false)}
-        >
-          <button
-            type="button"
-            className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white text-xl hover:bg-white/20 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpen(false);
-            }}
-            aria-label="关闭"
-          >
-            ✕
-          </button>
+      {/* Desktop hover preview — portaled to body so no ancestor transform
+          can clip / re-anchor it. pointer-events-none + dismiss-on-scroll
+          ensures it never traps interaction. Portal is only mounted on
+          interaction so SSR never sees document. */}
+      {typeof document !== "undefined" && hoverPreview && !lightbox &&
+        createPortal(
           <div
-            className="max-w-full max-h-full"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[90] pointer-events-none hidden md:flex items-center justify-center"
+            aria-hidden="true"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={RENDER_URL_LARGE(cardId)}
-              alt={name}
-              className="w-auto max-w-[90vw] max-h-[85vh] drop-shadow-[0_8px_30px_rgba(0,0,0,0.7)]"
+              alt=""
+              className="w-[320px] max-w-[40vw] drop-shadow-[0_8px_30px_rgba(0,0,0,0.85)]"
             />
-            <div className="mt-3 text-center text-sm text-white/80">
-              {name} · {cost} 费 · ×{count}
+          </div>,
+          document.body,
+        )}
+
+      {/* Lightbox — tap / click anywhere outside to close. */}
+      {typeof document !== "undefined" && lightbox &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] bg-black/85 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setLightbox(false)}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${name} 大图`}
+          >
+            <button
+              type="button"
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 text-white text-xl hover:bg-white/20 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setLightbox(false);
+              }}
+              aria-label="关闭"
+            >
+              ✕
+            </button>
+            <div
+              className="max-w-full max-h-full flex flex-col items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={RENDER_URL_LARGE(cardId)}
+                alt={name}
+                className="w-auto max-w-[92vw] max-h-[82vh] drop-shadow-[0_8px_30px_rgba(0,0,0,0.7)] select-none"
+                draggable={false}
+              />
+              <div className="mt-3 text-center text-sm text-white/80">
+                {name} · {cost} 费 · ×{count}
+              </div>
+              <div className="mt-2 text-center text-[11px] text-white/50">
+                点击空白处或按 Esc 关闭
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body,
+        )}
     </>
   );
 }
