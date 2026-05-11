@@ -6,7 +6,16 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://hearthguide.app";
 
 const LANGS = ["en", "zh"] as const;
 
-const STATIC_PATHS = ["", "/decks", "/guides", "/meta", "/recommend"] as const;
+const STATIC_PATHS = [
+  "",
+  "/decks",
+  "/guides",
+  "/meta",
+  "/recommend",
+  "/pricing",
+  "/legal/privacy",
+  "/legal/terms",
+] as const;
 
 function bilingual(path: string, lastModified?: Date | string) {
   return LANGS.map((lang) => ({
