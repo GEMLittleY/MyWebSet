@@ -1,14 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLanguage } from "./LanguageProvider";
 
 export default function Header() {
   const { lang, t, localePath } = useLanguage();
   const pathname = usePathname() ?? "";
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (!q) return;
+    router.push(`${localePath("/search")}?q=${encodeURIComponent(q)}`);
+    setSearchQuery("");
+    setMobileOpen(false);
+  };
 
   // Build the same path but in the other language.
   const switchLangHref = (target: "en" | "zh") => {
@@ -44,7 +55,7 @@ export default function Header() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-6">
+        <nav className="hidden md:flex items-center gap-5 flex-1 justify-center max-w-2xl">
           {nav.map((item) => (
             <Link
               key={item.href}
@@ -56,7 +67,59 @@ export default function Header() {
           ))}
         </nav>
 
+        <form
+          onSubmit={submitSearch}
+          className="hidden lg:flex relative w-44 mr-2"
+          role="search"
+        >
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={lang === "zh" ? "搜索…" : "Search…"}
+            aria-label={lang === "zh" ? "全站搜索" : "Search site"}
+            className="w-full bg-[#1a1f2e] border border-[#2a3040] rounded-lg px-2.5 py-1.5 pl-7 text-xs text-[#e8e6e3] placeholder:text-gray-600 focus:outline-none focus:border-[#f0b232]"
+          />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-500"
+            aria-hidden
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+        </form>
+
         <div className="flex items-center gap-1">
+          <Link
+            href={localePath("/search")}
+            className="lg:hidden px-2 py-1 text-gray-500 hover:text-[#f0b232]"
+            aria-label={lang === "zh" ? "搜索" : "Search"}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </Link>
           <Link
             href={switchLangHref("en")}
             className={`px-2 py-1 rounded text-xs transition-colors ${
