@@ -10,6 +10,7 @@ const STATIC_PATHS = [
   "",
   "/decks",
   "/cards",
+  "/builder",
   "/guides",
   "/meta",
   "/recommend",
