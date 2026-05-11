@@ -92,11 +92,19 @@ const HERO_CLASS_ZH: Record<string, string> = {
 const ARCHETYPE_MAP: Record<string, { slug: string; label_zh: string }> = {
   "No Minion DH": { slug: "combo", label_zh: "无随从恶魔猎手" },
   "No Hand Hunter": { slug: "combo", label_zh: "空手猎人" },
+  "Token Druid": { slug: "aggro", label_zh: "铺场德鲁伊" },
+  "Merithra Druid": { slug: "control", label_zh: "梅丽斯拉德鲁伊" },
   "Dragon Warrior": { slug: "midrange", label_zh: "巨龙战士" },
   "Harold Rogue": { slug: "combo", label_zh: "哈罗德潜行者" },
   "Quest Mage": { slug: "combo", label_zh: "任务法师" },
+  "Token Broxigar DH": { slug: "aggro", label_zh: "节奏布罗西加恶魔猎手" },
+  "CtA Paladin": { slug: "aggro", label_zh: "集结圣骑士" },
   Discolock: { slug: "combo", label_zh: "迪斯科术士" },
+  "Barnes Druid": { slug: "combo", label_zh: "巴恩斯德鲁伊" },
   "777 Miracle Rogue": { slug: "combo", label_zh: "777 奇迹贼" },
+  "XL Demon Boarlock": { slug: "combo", label_zh: "大型恶魔猪术" },
+  "Igneous Odyn Warrior": { slug: "control", label_zh: "火焰奥丁战士" },
+  "XL HL Tick Tock Warlock": { slug: "control", label_zh: "大型高地时钟术" },
   Boarlock: { slug: "aggro", label_zh: "野猪术（猪术）" },
   "XL HL Exodia Mage": { slug: "combo", label_zh: "大型高地无双法师" },
   "XL HL Igneous Warrior": { slug: "control", label_zh: "大型高地火焰战士" },
@@ -139,7 +147,15 @@ function main() {
 
   const out: RawDeck[] = [];
   for (const m of meta.decks) {
-    const decoded = decodeDeckstring(m.deck_code);
+    let decoded;
+    try {
+      decoded = decodeDeckstring(m.deck_code);
+    } catch (err) {
+      console.warn(
+        `[${m.archetype_en}] decode failed (${(err as Error).message}); skipping`,
+      );
+      continue;
+    }
     const heroDbf = decoded.heroes[0];
     const heroCard = heroDbf !== undefined ? byDbf.get(heroDbf) : undefined;
     const cardClass = heroCard?.cardClass ?? "";

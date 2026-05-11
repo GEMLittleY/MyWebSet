@@ -71,5 +71,27 @@ export function decodeDeckstring(code: string): DecodedDeck {
     cards.push({ dbfId, count });
   }
 
+  // Sideboards (E.T.C., Band Manager etc., introduced in later format
+  // revisions): hasSideboards flag (1 byte), then three (num, [card, owner]*)
+  // sections paralleling the single/double/multi structure above. We only need
+  // the main deck for our purposes, so we deliberately drop these. We
+  // tolerate truncated or absent sideboard data — anything we cannot parse is
+  // simply ignored.
+  try {
+    if (!r.hasMore()) return { format, heroes, cards };
+    const hasSideboards = r.readByte();
+    if (hasSideboards !== 1) return { format, heroes, cards };
+    for (let section = 0; section < 3; section++) {
+      if (!r.hasMore()) break;
+      const num = r.readVarint();
+      for (let i = 0; i < num; i++) {
+        r.readVarint();
+        r.readVarint();
+      }
+    }
+  } catch {
+    // Malformed sideboard segment — main deck stays usable.
+  }
+
   return { format, heroes, cards };
 }
