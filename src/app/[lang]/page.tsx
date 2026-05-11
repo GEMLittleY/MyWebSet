@@ -4,7 +4,12 @@ import HomeContent from "@/components/HomeContent";
 
 export const revalidate = 60;
 
-export default async function Home() {
+export default async function Home({
+  params,
+}: {
+  params: Promise<{ lang: string }>;
+}) {
+  await params;
   const decks = await getAllDecks();
   const posts = await getAllPosts();
   const topDecks = decks.filter((d) => d.tier <= 2).slice(0, 6);

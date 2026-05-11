@@ -5,7 +5,7 @@ import { useLanguage } from "./LanguageProvider";
 import type { Post } from "@/lib/supabase";
 
 export default function GuidesContent({ posts }: { posts: Post[] }) {
-  const { t, lang } = useLanguage();
+  const { t, lang, localePath } = useLanguage();
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-12">
@@ -23,7 +23,7 @@ export default function GuidesContent({ posts }: { posts: Post[] }) {
           return (
             <Link
               key={post.id}
-              href={`/guides/${post.slug}`}
+              href={localePath(`/guides/${post.slug}`)}
               className="card block overflow-hidden hover:border-[#4fc3f7]"
             >
               {post.cover_image && (

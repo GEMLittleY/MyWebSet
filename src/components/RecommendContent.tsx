@@ -1,34 +1,56 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/lib/supabase-browser";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase-browser";
+import { useLanguage } from "./LanguageProvider";
 import type { Deck } from "@/lib/decks";
 
-const CLASSES = [
-  { id: "any", name: "不限" },
-  { id: "warrior", name: "战士" },
-  { id: "mage", name: "法师" },
-  { id: "hunter", name: "猎人" },
-  { id: "paladin", name: "圣骑士" },
-  { id: "priest", name: "牧师" },
-  { id: "rogue", name: "潜行者" },
-  { id: "shaman", name: "萨满" },
-  { id: "warlock", name: "术士" },
-  { id: "druid", name: "德鲁伊" },
+const CLASS_IDS = [
+  "any",
+  "warrior",
+  "mage",
+  "hunter",
+  "paladin",
+  "priest",
+  "rogue",
+  "shaman",
+  "warlock",
+  "druid",
+  "demon-hunter",
+  "death-knight",
 ];
 
-const RANKS = [
-  { id: "bronze", name: "青铜" },
-  { id: "silver", name: "白银" },
-  { id: "gold", name: "黄金" },
-  { id: "platinum", name: "白金" },
-  { id: "diamond", name: "钻石" },
-  { id: "legend", name: "传说" },
-];
+const RANK_IDS = [
+  "bronze",
+  "silver",
+  "gold",
+  "platinum",
+  "diamond",
+  "legend",
+] as const;
 
-export default function RecommendPage() {
-  const [rank, setRank] = useState("gold");
+const RANK_LABELS_EN: Record<(typeof RANK_IDS)[number], string> = {
+  bronze: "Bronze",
+  silver: "Silver",
+  gold: "Gold",
+  platinum: "Platinum",
+  diamond: "Diamond",
+  legend: "Legend",
+};
+
+const RANK_LABELS_ZH: Record<(typeof RANK_IDS)[number], string> = {
+  bronze: "青铜",
+  silver: "白银",
+  gold: "黄金",
+  platinum: "白金",
+  diamond: "钻石",
+  legend: "传说",
+};
+
+export default function RecommendContent() {
+  const { t, lang, localePath } = useLanguage();
+  const [rank, setRank] = useState<(typeof RANK_IDS)[number]>("gold");
   const [preferClass, setPreferClass] = useState("any");
   const [budget, setBudget] = useState(8000);
   const [results, setResults] = useState<Deck[]>([]);
@@ -40,7 +62,10 @@ export default function RecommendPage() {
     setSearched(true);
     const supabase = createClient();
 
-    let query = supabase.from("decks").select("*").order("win_rate", { ascending: false });
+    let query = supabase
+      .from("decks")
+      .select("*")
+      .order("win_rate", { ascending: false });
 
     if (preferClass !== "any") {
       query = query.eq("hero_class", preferClass);
@@ -48,67 +73,72 @@ export default function RecommendPage() {
     query = query.lte("dust_cost", budget);
 
     const { data } = await query.limit(3);
-
-    if (data && data.length > 0) {
-      setResults(data);
-    } else {
-      setResults([]);
-    }
+    setResults(data ?? []);
     setLoading(false);
+  };
+
+  const rankLabel = (id: (typeof RANK_IDS)[number]) =>
+    lang === "zh" ? RANK_LABELS_ZH[id] : RANK_LABELS_EN[id];
+
+  const classLabel = (id: string) => {
+    if (id === "any") return lang === "zh" ? "不限" : "Any";
+    return (t.classes as Record<string, string>)[id] ?? id;
   };
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
-      <h1 className="text-3xl font-bold gold-text mb-2">AI 卡组推荐</h1>
-      <p className="text-gray-500 mb-8">
-        告诉我们你的情况，为你推荐最合适的卡组
-      </p>
+      <h1 className="text-3xl font-bold gold-text mb-2">{t.recommend.title}</h1>
+      <p className="text-gray-500 mb-8">{t.recommend.desc}</p>
 
       <div className="card p-6 mb-8">
-        {/* Rank */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">你的段位</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            {t.recommend.rank}
+          </label>
           <div className="flex flex-wrap gap-2">
-            {RANKS.map((r) => (
+            {RANK_IDS.map((r) => (
               <button
-                key={r.id}
-                onClick={() => setRank(r.id)}
+                key={r}
+                onClick={() => setRank(r)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  rank === r.id
+                  rank === r
                     ? "bg-[#f0b232] text-[#0f1419]"
                     : "bg-[#2a3040] text-gray-400 hover:text-[#f0b232]"
                 }`}
               >
-                {r.name}
+                {rankLabel(r)}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Preferred Class */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">偏好职业</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            {t.recommend.preferClass}
+          </label>
           <div className="flex flex-wrap gap-2">
-            {CLASSES.map((c) => (
+            {CLASS_IDS.map((c) => (
               <button
-                key={c.id}
-                onClick={() => setPreferClass(c.id)}
+                key={c}
+                onClick={() => setPreferClass(c)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  preferClass === c.id
+                  preferClass === c
                     ? "bg-[#4fc3f7] text-[#0f1419]"
                     : "bg-[#2a3040] text-gray-400 hover:text-[#4fc3f7]"
                 }`}
               >
-                {c.name}
+                {classLabel(c)}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Budget */}
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-300 mb-2">
-            尘预算: <span className="text-[#4fc3f7]">💎 {budget.toLocaleString()}</span>
+            {t.recommend.budget}:{" "}
+            <span className="text-[#4fc3f7]">
+              {budget.toLocaleString()} {t.decks.dust}
+            </span>
           </label>
           <input
             type="range"
@@ -130,40 +160,55 @@ export default function RecommendPage() {
           disabled={loading}
           className="w-full py-3 rounded-lg bg-[#f0b232] text-[#0f1419] font-semibold hover:bg-[#d4982a] transition-colors disabled:opacity-50"
         >
-          {loading ? "分析中..." : "获取推荐"}
+          {loading
+            ? lang === "zh"
+              ? "分析中..."
+              : "Analyzing..."
+            : t.recommend.submit}
         </button>
       </div>
 
-      {/* Results */}
       {searched && (
         <div>
-          <h2 className="text-xl font-semibold gold-text mb-4">推荐结果</h2>
+          <h2 className="text-xl font-semibold gold-text mb-4">
+            {t.recommend.result}
+          </h2>
           {results.length === 0 ? (
             <p className="text-gray-500 card p-6 text-center">
-              暂无符合条件的卡组，试试调高预算或选择「不限」职业
+              {lang === "zh"
+                ? "暂无符合条件的卡组，试试调高预算或选择「不限」职业"
+                : "No matching decks. Try a higher budget or pick \"Any\" class."}
             </p>
           ) : (
             <div className="space-y-4">
               {results.map((deck, idx) => (
                 <Link
                   key={deck.id}
-                  href={`/decks/${deck.slug}`}
+                  href={localePath(`/decks/${deck.slug}`)}
                   className="card block p-5 hover:border-[#f0b232]"
                 >
                   <div className="flex items-center gap-3 mb-2">
                     <span className="w-6 h-6 flex items-center justify-center rounded-full bg-[#f0b232] text-[#0f1419] text-xs font-bold">
                       {idx + 1}
                     </span>
-                    <span className={`text-xs tier-${deck.tier}`}>T{deck.tier}</span>
+                    <span className={`text-xs tier-${deck.tier}`}>
+                      T{deck.tier}
+                    </span>
                     <span className={`text-xs class-${deck.hero_class}`}>
-                      {CLASSES.find((c) => c.id === deck.hero_class)?.name || deck.hero_class}
+                      {classLabel(deck.hero_class)}
                     </span>
                   </div>
                   <h3 className="font-semibold text-[#e8e6e3]">{deck.title}</h3>
                   <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
-                    <span>💎 {deck.dust_cost.toLocaleString()}</span>
-                    <span className={deck.win_rate >= 55 ? "win-rate-good" : "win-rate-ok"}>
-                      胜率 {deck.win_rate}%
+                    <span>
+                      {deck.dust_cost.toLocaleString()} {t.decks.dust}
+                    </span>
+                    <span
+                      className={
+                        deck.win_rate >= 55 ? "win-rate-good" : "win-rate-ok"
+                      }
+                    >
+                      {t.decks.winRate} {deck.win_rate}%
                     </span>
                   </div>
                 </Link>

@@ -1,43 +1,58 @@
 "use client";
 
-import { createContext, useContext, useState, useSyncExternalStore, useCallback, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { type Lang, getDict } from "@/lib/i18n";
 
 type LanguageContextType = {
   lang: Lang;
-  setLang: (lang: Lang) => void;
   t: ReturnType<typeof getDict>;
+  /**
+   * Prefix a path with the current locale.
+   *   localePath("/decks")        -> "/en/decks" | "/zh/decks"
+   *   localePath("/")             -> "/en" | "/zh"
+   *   localePath("/decks/foo")    -> "/en/decks/foo" | "/zh/decks/foo"
+   */
+  localePath: (path: string) => string;
 };
 
-const LanguageContext = createContext<LanguageContextType>({
-  lang: "zh",
-  setLang: () => {},
-  t: getDict("zh"),
-});
+const DEFAULT: LanguageContextType = {
+  lang: "en",
+  t: getDict("en"),
+  localePath: (p: string) => `/en${normalize(p)}`,
+};
 
-function getStoredLang(): Lang {
-  if (typeof window === "undefined") return "zh";
-  const saved = localStorage.getItem("hg-lang");
-  return saved === "en" ? "en" : "zh";
+const LanguageContext = createContext<LanguageContextType>(DEFAULT);
+
+function normalize(path: string): string {
+  if (!path || path === "/") return "";
+  return path.startsWith("/") ? path : `/${path}`;
 }
 
-function subscribeLang(cb: () => void) {
-  window.addEventListener("storage", cb);
-  return () => window.removeEventListener("storage", cb);
-}
+export function LanguageProvider({
+  lang,
+  children,
+}: {
+  lang: Lang;
+  children: ReactNode;
+}) {
+  const localePath = useCallback(
+    (path: string) => `/${lang}${normalize(path)}`,
+    [lang],
+  );
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const initialLang = useSyncExternalStore(subscribeLang, getStoredLang, () => "zh" as Lang);
-  const [lang, setLangState] = useState<Lang>(initialLang);
-
-  const setLang = useCallback((newLang: Lang) => {
-    setLangState(newLang);
-    localStorage.setItem("hg-lang", newLang);
-    document.documentElement.lang = newLang === "zh" ? "zh-CN" : "en";
-  }, []);
+  const value = useMemo<LanguageContextType>(
+    () => ({ lang, t: getDict(lang), localePath }),
+    [lang, localePath],
+  );
 
   return (
-    <LanguageContext.Provider value={{ lang, setLang, t: getDict(lang) }}>
+    <LanguageContext.Provider value={value}>
       {children}
     </LanguageContext.Provider>
   );

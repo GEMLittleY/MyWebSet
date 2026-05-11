@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import CardImage from "@/components/CardImage";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { Deck } from "@/lib/decks";
 
 const CLASS_NAMES: Record<string, string> = {
@@ -24,6 +25,7 @@ const MODE_NAMES: Record<string, string> = {
 };
 
 export default function DeckDetailContent({ deck }: { deck: Deck }) {
+  const { t, lang, localePath } = useLanguage();
   const [copied, setCopied] = useState(false);
 
   const copyDeckCode = () => {
@@ -43,15 +45,30 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
   const totalCards = manaCurve.reduce((a, b) => a + b, 0);
 
   const heroPortrait = HERO_PORTRAITS[deck.hero_class];
-  const modeLabel = MODE_NAMES[deck.game_mode ?? "standard"] ?? "标准";
+  const modeKey = deck.game_mode ?? "standard";
+  const modeLabel =
+    lang === "zh"
+      ? MODE_NAMES[modeKey]
+      : modeKey === "wild"
+        ? t.decks.modeWild
+        : t.decks.modeStandard;
+  const className =
+    lang === "zh"
+      ? CLASS_NAMES[deck.hero_class] ?? deck.hero_class
+      : (t.classes as Record<string, string>)[deck.hero_class] ?? deck.hero_class;
+  const title = lang === "zh" ? deck.title : deck.title_en || deck.title;
+  const subtitle = lang === "zh" ? deck.title_en : deck.title;
 
   const matchupEntries = Object.entries(deck.matchups || {});
   const hasMatchups = matchupEntries.length > 0;
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-      <Link href="/decks" className="text-sm text-gray-500 hover:text-[#f0b232] transition-colors">
-        ← 返回卡组库
+      <Link
+        href={localePath("/decks")}
+        className="text-sm text-gray-500 hover:text-[#f0b232] transition-colors"
+      >
+        {lang === "en" ? "← Back to decks" : "← 返回卡组库"}
       </Link>
 
       {/* Hero Banner */}
@@ -72,31 +89,37 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
           <div className="flex items-center gap-2 mb-2 flex-wrap">
             <span className={`text-xs font-bold tier-${deck.tier} bg-[#0f1419]/60 px-2 py-0.5 rounded`}>T{deck.tier}</span>
             <span className={`text-xs class-${deck.hero_class} bg-[#0f1419]/60 px-2 py-0.5 rounded`}>
-              {CLASS_NAMES[deck.hero_class] || deck.hero_class}
+              {className}
             </span>
             <span className="text-xs text-[#4fc3f7] bg-[#0f1419]/60 px-2 py-0.5 rounded border border-[#4fc3f7]/30">
               {modeLabel}
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e6e3]">{deck.title}</h1>
-          <p className="text-xs sm:text-sm text-gray-500 mt-1">{deck.title_en}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e6e3]">{title}</h1>
+          {subtitle && subtitle !== title && (
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">{subtitle}</p>
+          )}
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-8">
         <div className="card p-3 sm:p-4 text-center">
-          <div className="text-xs text-gray-500">胜率</div>
+          <div className="text-xs text-gray-500">{t.decks.winRate}</div>
           <div className={`text-lg sm:text-xl font-bold ${deck.win_rate >= 55 ? "win-rate-good" : deck.win_rate >= 50 ? "win-rate-ok" : "win-rate-bad"}`}>
             {deck.win_rate}%
           </div>
         </div>
         <div className="card p-3 sm:p-4 text-center">
-          <div className="text-xs text-gray-500">合成费用</div>
-          <div className="text-lg sm:text-xl font-bold text-[#4fc3f7]">💎 {deck.dust_cost.toLocaleString()}</div>
+          <div className="text-xs text-gray-500">
+            {lang === "en" ? "Dust Cost" : "合成费用"}
+          </div>
+          <div className="text-lg sm:text-xl font-bold text-[#4fc3f7]">
+            💎 {deck.dust_cost.toLocaleString()}
+          </div>
         </div>
         <div className="card p-3 sm:p-4 text-center">
-          <div className="text-xs text-gray-500">强度</div>
+          <div className="text-xs text-gray-500">{t.decks.tier}</div>
           <div className={`text-lg sm:text-xl font-bold tier-${deck.tier}`}>Tier {deck.tier}</div>
         </div>
       </div>
@@ -111,7 +134,7 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
             onClick={copyDeckCode}
             className="px-3 sm:px-4 py-2 rounded-lg bg-[#f0b232] text-[#0f1419] text-xs sm:text-sm font-medium hover:bg-[#d4982a] transition-colors whitespace-nowrap"
           >
-            {copied ? "已复制！" : "复制代码"}
+            {copied ? t.decks.copied : t.decks.copyCode}
           </button>
         </div>
       </div>
@@ -120,8 +143,10 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
         {/* Mana Curve */}
         <div className="card p-4 sm:p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold gold-text">费用曲线</h3>
-            <span className="text-xs text-gray-500">共 {totalCards} 张</span>
+            <h3 className="font-semibold gold-text">{t.decks.manaCurve}</h3>
+            <span className="text-xs text-gray-500">
+              {lang === "en" ? `${totalCards} cards` : `共 ${totalCards} 张`}
+            </span>
           </div>
           <div className="flex items-end gap-1 sm:gap-1.5 h-36">
             {manaCurve.map((count, i) => (
@@ -161,11 +186,15 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
         {/* Matchups (only when data exists) */}
         {hasMatchups && (
           <div className="card p-4 sm:p-5">
-            <h3 className="font-semibold gold-text mb-4">对阵胜率</h3>
+            <h3 className="font-semibold gold-text mb-4">{t.decks.matchups}</h3>
             <div className="space-y-2">
               {matchupEntries.map(([cls, wr]) => (
                 <div key={cls} className="flex items-center gap-2 text-xs">
-                  <span className={`w-16 class-${cls}`}>{CLASS_NAMES[cls] || cls}</span>
+                  <span className={`w-16 class-${cls}`}>
+                    {lang === "zh"
+                      ? CLASS_NAMES[cls] ?? cls
+                      : (t.classes as Record<string, string>)[cls] ?? cls}
+                  </span>
                   <div className="flex-1 h-2 bg-[#2a3040] rounded overflow-hidden">
                     <div
                       className={`h-full rounded ${Number(wr) >= 55 ? "bg-green-500" : Number(wr) >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
@@ -185,8 +214,10 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
       {/* Card List */}
       <div className="card p-4 sm:p-5 mb-6 sm:mb-8">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold gold-text">卡牌列表</h3>
-          <span className="text-xs text-gray-500">{totalCards} 张卡牌</span>
+          <h3 className="font-semibold gold-text">{t.decks.cardList}</h3>
+          <span className="text-xs text-gray-500">
+            {lang === "en" ? `${totalCards} cards` : `${totalCards} 张卡牌`}
+          </span>
         </div>
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 sm:gap-3">
           {[...(deck.card_list || [])].sort((a, b) => a.cost - b.cost).map((card, i) => (
@@ -200,14 +231,14 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
           ))}
         </div>
         <p className="text-[11px] text-gray-500 mt-3 sm:hidden">
-          点击卡牌查看大图
+          {lang === "en" ? "Tap a card to enlarge" : "点击卡牌查看大图"}
         </p>
       </div>
 
       {/* Guide */}
       {deck.guide && (
         <div className="card p-4 sm:p-6">
-          <h3 className="font-semibold gold-text mb-4">使用攻略</h3>
+          <h3 className="font-semibold gold-text mb-4">{t.decks.guide}</h3>
           <MarkdownRenderer content={deck.guide} />
         </div>
       )}

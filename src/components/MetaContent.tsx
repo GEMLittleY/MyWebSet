@@ -12,7 +12,7 @@ const TIER_LABELS_EN: Record<number, string> = {
 };
 
 export default function MetaContent({ decks }: { decks: Deck[] }) {
-  const { t, lang } = useLanguage();
+  const { t, lang, localePath } = useLanguage();
 
   const tierGroups: Record<number, Deck[]> = {};
   decks.forEach((d) => {
@@ -84,7 +84,7 @@ export default function MetaContent({ decks }: { decks: Deck[] }) {
                 {tierDecks.map((deck) => (
                   <Link
                     key={deck.id}
-                    href={`/decks/${deck.slug}`}
+                    href={localePath(`/decks/${deck.slug}`)}
                     className="card p-4 flex items-center justify-between hover:border-[#f0b232]"
                   >
                     <div>

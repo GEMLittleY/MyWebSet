@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import type { Deck } from "@/lib/decks";
+import { useLanguage } from "./LanguageProvider";
 
 const CLASS_NAMES: Record<string, string> = {
   warrior: "战士", mage: "法师", hunter: "猎人", paladin: "圣骑士",
@@ -45,11 +48,20 @@ function getWinRateColor(wr: number) {
 }
 
 export default function DeckCard({ deck }: { deck: Deck }) {
+  const { lang, t, localePath } = useLanguage();
   const heroId = HERO_PORTRAITS[deck.hero_class];
   const gradient = CLASS_GRADIENTS[deck.hero_class] || "from-transparent to-transparent";
+  const className = lang === "zh"
+    ? CLASS_NAMES[deck.hero_class] ?? deck.hero_class
+    : (t.classes as Record<string, string>)[deck.hero_class] ?? deck.hero_class;
+  const archetypeName = lang === "zh"
+    ? ARCHETYPE_NAMES[deck.archetype] ?? deck.archetype
+    : (t.archetypes as Record<string, string>)[deck.archetype] ?? deck.archetype;
+  const title = lang === "zh" ? deck.title : deck.title_en || deck.title;
+  const subtitle = lang === "zh" ? deck.title_en : deck.title;
 
   return (
-    <Link href={`/decks/${deck.slug}`} className="card block relative overflow-hidden">
+    <Link href={localePath(`/decks/${deck.slug}`)} className="card block relative overflow-hidden">
       {/* Hero portrait background */}
       {heroId && (
         <>
@@ -69,20 +81,18 @@ export default function DeckCard({ deck }: { deck: Deck }) {
       <div className="relative p-5">
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="font-semibold text-[#e8e6e3]">{deck.title}</h3>
-            <p className="text-xs text-gray-500 mt-0.5">{deck.title_en}</p>
+            <h3 className="font-semibold text-[#e8e6e3]">{title}</h3>
+            {subtitle && subtitle !== title && (
+              <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+            )}
           </div>
           <span className={`text-xs font-bold ${getTierColor(deck.tier)} bg-[#0f1419]/60 px-2 py-0.5 rounded`}>
             T{deck.tier}
           </span>
         </div>
         <div className="flex items-center gap-3 text-xs">
-          <span className={`class-${deck.hero_class}`}>
-            {CLASS_NAMES[deck.hero_class] || deck.hero_class}
-          </span>
-          <span className="text-gray-500">
-            {ARCHETYPE_NAMES[deck.archetype] || deck.archetype}
-          </span>
+          <span className={`class-${deck.hero_class}`}>{className}</span>
+          <span className="text-gray-500">{archetypeName}</span>
           <span className="text-gray-500">
             💎 {deck.dust_cost.toLocaleString()}
           </span>

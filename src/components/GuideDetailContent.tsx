@@ -6,7 +6,7 @@ import { useLanguage } from "./LanguageProvider";
 import type { Post } from "@/lib/supabase";
 
 export default function GuideDetailContent({ post }: { post: Post }) {
-  const { t, lang } = useLanguage();
+  const { t, lang, localePath } = useLanguage();
 
   const date = new Date(post.published_at).toLocaleDateString(
     lang === "en" ? "en-US" : "zh-CN",
@@ -16,7 +16,7 @@ export default function GuideDetailContent({ post }: { post: Post }) {
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
       <Link
-        href="/guides"
+        href={localePath("/guides")}
         className="text-sm text-gray-500 hover:text-[#f0b232] transition-colors"
       >
         {t.guides.back}

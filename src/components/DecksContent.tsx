@@ -23,7 +23,7 @@ export default function DecksContent({
   initialTypeFilter: string;
   initialModeFilter: "standard" | "wild";
 }) {
-  const { t } = useLanguage();
+  const { t, localePath } = useLanguage();
   const classFilter = initialClassFilter;
   const typeFilter = initialTypeFilter;
   const modeFilter = initialModeFilter;
@@ -62,7 +62,7 @@ export default function DecksContent({
     params.set("mode", m);
     if (c !== "all") params.set("class", c);
     if (tp !== "all") params.set("type", tp);
-    return `/decks?${params.toString()}`;
+    return `${localePath("/decks")}?${params.toString()}`;
   };
 
   return (
@@ -134,7 +134,9 @@ export default function DecksContent({
 
       {filteredDecks.length === 0 && (
         <p className="text-center text-gray-500 py-12">
-          {t.nav.home === "Home" ? "No decks match your filters" : "暂无符合条件的卡组"}
+          {t.nav.home === "Home"
+            ? "No decks match your filters"
+            : "暂无符合条件的卡组"}
         </p>
       )}
     </div>
