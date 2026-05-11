@@ -1,10 +1,14 @@
-// Seed Supabase `decks` table from data/decks-raw.json (produced by scrape-decks.ts).
-// Falls back to DEMO_DECKS if the raw file isn't present.
+// Seed Supabase `decks` table from data/decks-raw.json
+// (produced by scripts/build-decks-from-meta.ts).
+//
+// Source of truth: hsguru.com Firestone replay statistics.
+// We do NOT fabricate any "留牌策略 / 关键回合" guide content; the guide
+// markdown only contains real numerical facts + a deep link to the source.
 
 import { createClient } from "@supabase/supabase-js";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { DEMO_DECKS, type Deck } from "../src/lib/decks";
+import type { Deck } from "../src/lib/decks";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -56,6 +60,8 @@ type RawDeck = {
   format: number;
   dust_cost: number;
   card_list: RawCard[];
+  source_url?: string;
+  snapshot_at?: string;
 };
 
 function slugFromUrl(url: string, mode: string): string {
@@ -107,6 +113,9 @@ function buildGuide(d: RawDeck): string {
   }
   const avgCost = totalCount > 0 ? (totalCost / totalCount).toFixed(2) : "0";
 
+  const sourceUrl = d.source_url ?? d.url;
+  const snapshotAt = d.snapshot_at ?? new Date().toISOString().slice(0, 10);
+
   const lines = [
     `## 卡组信息`,
     ``,
@@ -116,7 +125,7 @@ function buildGuide(d: RawDeck): string {
     `| 职业 | ${d.hero_class_zh} |`,
     `| 流派 | ${d.archetype_label}（${archZh}）|`,
     `| 平均费用 | ${avgCost} |`,
-    `| 实战胜率 | ${(d.win_rate ?? 50).toFixed(1)}%（${d.total_games || "—"} 局）|`,
+    `| 实战胜率 | **${(d.win_rate ?? 50).toFixed(1)}%**（${d.total_games?.toLocaleString() || "—"} 局）|`,
     `| 合成尘埃 | ${d.dust_cost.toLocaleString()} |`,
     ``,
     `## 核心卡牌`,
@@ -131,7 +140,13 @@ function buildGuide(d: RawDeck): string {
     ``,
     `## 数据来源`,
     ``,
-    `本卡组来自 [hearthstone-decks.net](${d.url}) 玩家提交的传说前 500 名实战记录。详细打法、起手留牌、对阵策略请参考原页面或观看高分玩家直播。`,
+    `本卡组数据来自 [hsguru.com](${sourceUrl})（基于 Firestone 卡牌追踪器上传的真实对局回放统计），快照时间 ${snapshotAt}。`,
+    ``,
+    `**关于打法、起手留牌、对阵策略**：本站不提供编造的攻略文案，请直接参考：`,
+    ``,
+    `- [原数据页面](${sourceUrl})（含完整对局明细 / 各回合留牌频率）`,
+    `- B 站 / YouTube 搜索 archetype 名称「${d.title_en}」观看高分段位实战录像`,
+    `- 国服 NGA「炉石传说」版块社区讨论`,
     ``,
     `## 卡组分享码`,
     ``,
@@ -151,11 +166,10 @@ function buildTitle(d: RawDeck): string {
 function loadDecks(): Array<Omit<Deck, "id">> {
   const rawPath = resolve(process.cwd(), "data/decks-raw.json");
   if (!existsSync(rawPath)) {
-    console.log("data/decks-raw.json not found, falling back to DEMO_DECKS");
-    return DEMO_DECKS.map(({ id: _id, ...rest }) => ({
-      ...rest,
-      game_mode: "standard" as const,
-    }));
+    console.error(
+      `data/decks-raw.json not found. Run 'npx tsx scripts/build-decks-from-meta.ts' first.`,
+    );
+    process.exit(1);
   }
 
   const raws = JSON.parse(readFileSync(rawPath, "utf8")) as RawDeck[];

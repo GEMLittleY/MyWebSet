@@ -40,4 +40,6 @@ yarn-error.log*
 next-env.d.ts
 
 # generated card / deck data (derived from external sources, regenerable)
-/data/
+/data/*
+# but keep the curated hsguru meta snapshot — it's the seed input
+!/data/meta-candidates.json

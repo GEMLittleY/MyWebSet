@@ -1,0 +1,106 @@
+{
+  "source": "https://www.hsguru.com",
+  "snapshot_at": "2026-05-10T06:42+08:00",
+  "filters": {
+    "standard": "format=2&period=past_week&rank=top_legend&min_games=800&order_by=winrate",
+    "wild": "format=1&period=past_week&rank=legend&min_games=400&order_by=winrate"
+  },
+  "decks": [
+    {
+      "game_mode": "standard",
+      "archetype_en": "No Minion DH",
+      "deck_code": "AAECAea5Awa0lweKqgeSqgeTqgensQeUvwcM4fgF3v8G/oMHqocHtpcH550HnrEHobEHwLEH6LEHkr8Hlb8HAAA=",
+      "win_rate": 56.1,
+      "total_games": 2341,
+      "source_url": "https://www.hsguru.com/deck/38744796"
+    },
+    {
+      "game_mode": "standard",
+      "archetype_en": "No Hand Hunter",
+      "deck_code": "AAECAR8EmacHmqcHm6cHxbEHDamfBKqfBNOeBq+SB4WVB9eXB86bB5CnB5inB9SvB7TAB7nAB7vABwAA",
+      "win_rate": 54.9,
+      "total_games": 878,
+      "source_url": "https://www.hsguru.com/deck/38746107"
+    },
+    {
+      "game_mode": "standard",
+      "archetype_en": "Dragon Warrior",
+      "deck_code": "AAECAQcCi6AE0LIHDuPmBqr8Bqv8BuiHB9KXB7etB4+xB+yyB4S9B7XAB5XCB5vCB5zCB/nDBwAA",
+      "win_rate": 54.0,
+      "total_games": 808,
+      "source_url": "https://www.hsguru.com/deck/39274898"
+    },
+    {
+      "game_mode": "standard",
+      "archetype_en": "Harold Rogue",
+      "deck_code": "AAECAaIHDtOeBqGBB5KDB8ODB4KYB9GdB+ylB4aoB4eoB4ioB9C/B4rUB5vUB4jZBwj3nwTBlwfHrge0wQfAwQedxQfVxQfD8gcAAA==",
+      "win_rate": 53.4,
+      "total_games": 1645,
+      "source_url": "https://www.hsguru.com/deck/39579348"
+    },
+    {
+      "game_mode": "standard",
+      "archetype_en": "Quest Mage",
+      "deck_code": "AAECAf0EBu/8BsODB6ebB/mbB/KyB5PaBwyb8gbxkQewmwf6mwfVnQfRpgfLtgf5wweGxAeSxAeG4AecgggAAA==",
+      "win_rate": 53.3,
+      "total_games": 2169,
+      "source_url": "https://www.hsguru.com/deck/39414891"
+    },
+    {
+      "game_mode": "wild",
+      "archetype_en": "Discolock",
+      "deck_code": "AAEBAf0GBM4Hj4ID8aEG9qEGDbW5A9XRA9DhA5iSBauSBZXKBteXB4SZB6StB8ayB9a+B9m+B8+/BwAA",
+      "win_rate": 59.0,
+      "total_games": 568,
+      "source_url": "https://www.hsguru.com/deck/38954062"
+    },
+    {
+      "game_mode": "wild",
+      "archetype_en": "777 Miracle Rogue",
+      "deck_code": "AAEBAaIHBvyjA421BPXdBNCeBpKDB4jZBwztAoK0AvW7Ar2ABPefBLezBNW2BL/3BceUBqCzBsGXB7TBBwAA",
+      "win_rate": 55.0,
+      "total_games": 549,
+      "source_url": "https://www.hsguru.com/deck/38752826"
+    },
+    {
+      "game_mode": "wild",
+      "archetype_en": "Boarlock",
+      "deck_code": "AAEBAf0GCuAF7awDm80D/cQF9MYF7qEGxKIG0YIHqYgH1r4HCpDHAvLQAp2pA9P5A6bqBISeBvejBpWzBoSZB4adBwABA/jQAv3EBfuwA/3EBc7xBv3EBQAA",
+      "win_rate": 53.4,
+      "total_games": 594,
+      "source_url": "https://www.hsguru.com/deck/39305146"
+    },
+    {
+      "game_mode": "wild",
+      "archetype_en": "XL HL Exodia Mage",
+      "deck_code": "AAEBAf0EKMABywTwE8MWhLsCmMQC/KMD9KsDjLkD4MwD9tYDne4D5bAEyt4EvO0El+8EkJYFqpgF4MMF/cQF7PYF0fgF2P4F8YAG1pgGsaAGyKAGtKcGr6gG56kGwr4Ghb8Gy9AGw4MHs4cHp5sH0aYHy7YHhsQHk9oHAAABA8KlBf3EBfibBv3EBeqsB/3EBQAA",
+      "win_rate": 53.3,
+      "total_games": 880,
+      "source_url": "https://www.hsguru.com/deck/39550084"
+    },
+    {
+      "game_mode": "wild",
+      "archetype_en": "XL HL Igneous Warrior",
+      "deck_code": "AAEBAQcoS8MWoM4Cz+cC/KMDuLkDj84Dk9AD+YwE5bAEjLYEjLcE784EjtQEuNkEl+8E4qQF/cQFofsFi5QG95cGn54G0Z4Gx6QGkagGr6gG7KkG0LAG1boGjr8GrsAG+skG88oGquoGqfUGw4MH7o8H25cH6qcH/K8HAAABBsPqAv3EBe/OBP3EBdGeBv3EBfWzBsekBvezBsekBu7eBsekBgAA",
+      "win_rate": 53.1,
+      "total_games": 557,
+      "source_url": "https://www.hsguru.com/deck/38912620"
+    },
+    {
+      "game_mode": "wild",
+      "archetype_en": "XL HL Tog Druid",
+      "deck_code": "AAEBAZICKF/kCIoOwxagzQKgzgL96wKa7gKP9gKM+wL1/AL8owPougOK4AOvgASJiwTlsATHsgSuwAS42QSX7wT9xAWf8wXb+gWXoAaaoAaDoQaJoQbHpAavqAbvqQbVugakuwauwAbzygaq6gavhwfblweqrwe+sgcAAAEGv5UG/cQFvpkG/cQF0Z4G/cQF9bMGx6QG97MGx6QG7t4Gx6QGAAA=",
+      "win_rate": 51.4,
+      "total_games": 790,
+      "source_url": "https://www.hsguru.com/deck/39304995"
+    },
+    {
+      "game_mode": "wild",
+      "archetype_en": "Quasar Rogue",
+      "deck_code": "AAEBAaIHBoCmA/efBMGhBa2nBra1Bq/fBwz1uwLn3QOO9AO3swTVtgTawwW/9wXungbyyQby5wbk6gbBlwcAAA==",
+      "win_rate": 50.5,
+      "total_games": 600,
+      "source_url": "https://www.hsguru.com/deck/39266860"
+    }
+  ]
+}
