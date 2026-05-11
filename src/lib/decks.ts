@@ -8,6 +8,16 @@ export type Card = {
   card_id?: string;
 };
 
+export type MulliganEntry = {
+  card_id: string;
+  name?: string;
+  /** Fraction in [0,1] of replays where this card was kept on opening hand. */
+  keep_rate: number;
+  /** Optional win-rate when kept / mulliganed away. Both fractions. */
+  win_rate_kept?: number;
+  win_rate_not_kept?: number;
+};
+
 export type Deck = {
   id: number;
   title: string;
@@ -24,6 +34,8 @@ export type Deck = {
   guide: string;
   card_list: Card[];
   matchups: Record<string, number>;
+  /** Mulligan keep / win-rate per card. Optional; empty array means no data. */
+  mulligan?: MulliganEntry[];
   published_at: string;
   created_at: string;
 };

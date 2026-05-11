@@ -284,6 +284,52 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
         </p>
       </div>
 
+      {/* Mulligan (only when data exists) */}
+      {(deck.mulligan ?? []).length > 0 && (
+        <div className="card p-4 sm:p-5 mb-6 sm:mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold gold-text">
+              {lang === "en" ? "Mulligan Guide" : "起手指南"}
+            </h3>
+            <span className="text-xs text-gray-500">
+              {lang === "en"
+                ? "Keep-rate from top-legend replays"
+                : "传说排位实战起手保留率"}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            {(deck.mulligan ?? [])
+              .slice()
+              .sort((a, b) => b.keep_rate - a.keep_rate)
+              .slice(0, 8)
+              .map((m) => (
+                <div key={m.card_id} className="card p-3 text-center">
+                  <CardImage
+                    cardId={m.card_id}
+                    name={m.name ?? m.card_id}
+                    cost={0}
+                    count={1}
+                  />
+                  <div className="text-[11px] text-gray-500 mt-2">
+                    {lang === "en" ? "Keep" : "保留"}
+                  </div>
+                  <div
+                    className={`text-sm font-bold ${
+                      m.keep_rate >= 0.7
+                        ? "win-rate-good"
+                        : m.keep_rate >= 0.4
+                          ? "win-rate-ok"
+                          : "win-rate-bad"
+                    }`}
+                  >
+                    {(m.keep_rate * 100).toFixed(0)}%
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
+
       {/* Guide */}
       {deck.guide && (
         <div className="card p-4 sm:p-6">
