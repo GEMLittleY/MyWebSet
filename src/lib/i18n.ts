@@ -7,6 +7,7 @@ const dict = {
     nav: {
       home: "首页",
       decks: "卡组库",
+      cards: "卡片",
       guides: "攻略",
       meta: "Meta",
       recommend: "AI推荐",
@@ -92,6 +93,7 @@ const dict = {
     nav: {
       home: "Home",
       decks: "Decks",
+      cards: "Cards",
       guides: "Guides",
       meta: "Meta",
       recommend: "AI Pick",

@@ -9,6 +9,7 @@ const LANGS = ["en", "zh"] as const;
 const STATIC_PATHS = [
   "",
   "/decks",
+  "/cards",
   "/guides",
   "/meta",
   "/recommend",

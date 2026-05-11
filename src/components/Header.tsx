@@ -23,6 +23,7 @@ export default function Header() {
 
   const nav = [
     { href: localePath("/decks"), label: t.nav.decks },
+    { href: localePath("/cards"), label: t.nav.cards },
     { href: localePath("/guides"), label: t.nav.guides },
     { href: localePath("/meta"), label: t.nav.meta },
     { href: localePath("/recommend"), label: t.nav.recommend },

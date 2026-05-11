@@ -29,6 +29,12 @@ export default function Footer() {
                 {t.nav.decks}
               </Link>
               <Link
+                href={localePath("/cards")}
+                className="block text-sm text-gray-500 hover:text-[#f0b232]"
+              >
+                {t.nav.cards}
+              </Link>
+              <Link
                 href={localePath("/guides")}
                 className="block text-sm text-gray-500 hover:text-[#f0b232]"
               >
