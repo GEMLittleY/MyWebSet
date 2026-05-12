@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLanguage } from "./LanguageProvider";
 import UserMenu from "./UserMenu";
+import NotificationBell from "./NotificationBell";
 
 export default function Header() {
   const { lang, t, localePath } = useLanguage();
@@ -145,6 +146,7 @@ export default function Header() {
           >
             中文
           </Link>
+          <NotificationBell />
           <UserMenu />
           <button
             type="button"

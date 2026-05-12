@@ -36,6 +36,7 @@ export default function UserMenu() {
           account: "我的账户",
           favorites: "我的收藏",
           decks: "我的卡组",
+          notifications: "通知",
           signOut: "退出登录",
         }
       : {
@@ -43,6 +44,7 @@ export default function UserMenu() {
           account: "Account",
           favorites: "Favourites",
           decks: "My decks",
+          notifications: "Notifications",
           signOut: "Sign out",
         };
 
@@ -139,6 +141,14 @@ export default function UserMenu() {
             className="block px-4 py-2 text-sm text-gray-300 hover:bg-[#1a1f2e] hover:text-[#f0b232]"
           >
             {t.decks}
+          </Link>
+          <Link
+            role="menuitem"
+            href={localePath("/account/notifications")}
+            onClick={closeMenu}
+            className="block px-4 py-2 text-sm text-gray-300 hover:bg-[#1a1f2e] hover:text-[#f0b232]"
+          >
+            {t.notifications}
           </Link>
           <button
             role="menuitem"
