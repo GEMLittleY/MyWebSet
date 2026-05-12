@@ -181,8 +181,31 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
           <code className="text-xs text-gray-400 truncate flex-1 min-w-0">
             {deck.deck_code}
           </code>
-          <div className="flex gap-2 shrink-0 relative">
+          <div className="flex gap-2 shrink-0 relative flex-wrap">
             <FavoriteButton type="deck" id={deck.slug} variant="pill" />
+            <Link
+              href={localePath(`/builder?from=${deck.slug}`)}
+              className="px-3 sm:px-4 py-2 rounded-lg bg-[#1a1f2e] border border-[#2a3040] text-gray-300 text-xs sm:text-sm font-medium hover:border-[#f0b232] hover:text-[#f0b232] transition-colors whitespace-nowrap inline-flex items-center gap-1.5"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="M6 3v12" />
+                <circle cx="18" cy="6" r="3" />
+                <circle cx="6" cy="18" r="3" />
+                <path d="M18 9a9 9 0 0 1-9 9" />
+              </svg>
+              {lang === "zh" ? "在构筑器中编辑" : "Open in builder"}
+            </Link>
             <button
               type="button"
               onClick={handleShare}

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { CARD_CLASSES, type CardIndexEntry } from "@/lib/cards-meta";
 import {
@@ -8,6 +10,16 @@ import {
   FORMAT_WILD,
   encodeDeckstring,
 } from "@/lib/deckstring-encoder";
+import { useSession } from "@/lib/useSession";
+import { createClient } from "@/lib/supabase-browser";
+import { deckClassToCardClass } from "@/lib/cards-meta";
+import {
+  createDeck,
+  deleteDeck,
+  getMyDeckById,
+  updateDeck,
+  type UserDeck,
+} from "@/lib/user-decks";
 
 const CLASS_LABELS_EN: Record<string, string> = {
   DEATHKNIGHT: "Death Knight",
@@ -75,6 +87,16 @@ export default function DeckBuilder({
   lang: "en" | "zh";
 }) {
   const classLabel = lang === "zh" ? CLASS_LABELS_ZH : CLASS_LABELS_EN;
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user } = useSession();
+  const editingId = (() => {
+    const v = searchParams?.get("id");
+    if (!v) return null;
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  })();
+  const forkFromSlug = searchParams?.get("from") ?? null;
 
   // Lazy initialisers read localStorage exactly once on the client; on the
   // server they return the safe defaults. The initial render matches the
@@ -92,6 +114,85 @@ export default function DeckBuilder({
   const [query, setQuery] = useState("");
   const [costFilter, setCostFilter] = useState<number | "ALL">("ALL");
   const [exported, setExported] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
+  const [savingDeck, setSavingDeck] = useState(false);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadedDeck, setLoadedDeck] = useState<UserDeck | null>(null);
+
+  // Load existing user deck when ?id= is present and the user is signed in.
+  useEffect(() => {
+    if (!user || !editingId) return;
+    const cancelled = { current: false };
+    const supabase = createClient();
+    getMyDeckById(supabase, user.id, editingId)
+      .then((deck) => {
+        if (cancelled.current || !deck) return;
+        setLoadedDeck(deck);
+        setTitle(deck.title);
+        setIsPublic(deck.is_public);
+        setKlass(deck.hero_class);
+        const next: Selected = {};
+        const dbfToId = new Map(cards.map((c) => [c.dbfId, c.id] as const));
+        for (const entry of deck.card_list) {
+          const id =
+            typeof entry.card_id === "string"
+              ? entry.card_id
+              : dbfToId.get(entry.card_id) ?? "";
+          if (id) next[id] = (next[id] ?? 0) + entry.count;
+        }
+        setSelected(next);
+        setExported(deck.deck_code ?? null);
+      })
+      .catch((e: unknown) => {
+        if (cancelled.current) return;
+        setSaveError(e instanceof Error ? e.message : "load failed");
+      });
+    return () => {
+      cancelled.current = true;
+    };
+  }, [user, editingId, cards]);
+
+  // Fork from a curated meta deck by slug. Best-effort: if the slug is bad
+  // we silently skip (current selection wins).
+  useEffect(() => {
+    if (!forkFromSlug || editingId || loadedDeck) return;
+    const cancelled = { current: false };
+    const supabase = createClient();
+    supabase
+      .from("decks")
+      .select("hero_class,title,title_en,card_list,deck_code")
+      .eq("slug", forkFromSlug)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (cancelled.current || !data) return;
+        const meta = data as {
+          hero_class: string;
+          title: string;
+          title_en: string | null;
+          card_list: Array<{ card_id: string | number; count: number }>;
+          deck_code: string | null;
+        };
+        setKlass(deckClassToCardClass(meta.hero_class));
+        const next: Selected = {};
+        const dbfToId = new Map(cards.map((c) => [c.dbfId, c.id] as const));
+        for (const entry of meta.card_list ?? []) {
+          const id =
+            typeof entry.card_id === "string"
+              ? entry.card_id
+              : dbfToId.get(entry.card_id) ?? "";
+          if (id) next[id] = (next[id] ?? 0) + entry.count;
+        }
+        setSelected(next);
+        const forkLabel = lang === "zh" ? "我的" : "My ";
+        setTitle(`${forkLabel}${meta.title_en || meta.title}`);
+        setExported(meta.deck_code ?? null);
+      });
+    return () => {
+      cancelled.current = true;
+    };
+  }, [forkFromSlug, editingId, loadedDeck, cards, lang]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -216,9 +317,153 @@ export default function DeckBuilder({
     setExported(null);
   };
 
+  // Snapshot the current builder state into a row payload for user_decks.
+  const buildPayload = () => ({
+    title: title.trim() || `${classLabel[klass]} ${new Date().toISOString().slice(0, 10)}`,
+    description: null,
+    hero_class: klass,
+    archetype: null,
+    deck_code: exported,
+    card_list: Object.entries(selected).map(([id, count]) => ({
+      card_id: id,
+      count,
+    })),
+    dust_cost: dust,
+    parent_slug: forkFromSlug,
+    is_public: isPublic,
+  });
+
+  const saveDeck = async () => {
+    if (!user) {
+      const next =
+        typeof window !== "undefined"
+          ? window.location.pathname + window.location.search
+          : `/${lang}/builder`;
+      router.push(`/${lang}/login?next=${encodeURIComponent(next)}`);
+      return;
+    }
+    if (total === 0) return;
+    setSavingDeck(true);
+    setSaveError(null);
+    const supabase = createClient();
+    try {
+      const payload = buildPayload();
+      if (loadedDeck) {
+        const updated = await updateDeck(supabase, loadedDeck.id, payload);
+        setLoadedDeck(updated);
+      } else {
+        const created = await createDeck(supabase, user.id, payload);
+        setLoadedDeck(created);
+        // Move to ?id=N so subsequent saves update in place.
+        router.replace(`/${lang}/builder?id=${created.id}`);
+      }
+      setSavedAt(Date.now());
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "save failed");
+    } finally {
+      setSavingDeck(false);
+    }
+  };
+
+  const togglePublish = async () => {
+    if (!user || !loadedDeck) return;
+    setSavingDeck(true);
+    setSaveError(null);
+    const supabase = createClient();
+    try {
+      const updated = await updateDeck(supabase, loadedDeck.id, {
+        is_public: !isPublic,
+      });
+      setLoadedDeck(updated);
+      setIsPublic(updated.is_public);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "publish failed");
+    } finally {
+      setSavingDeck(false);
+    }
+  };
+
+  const removeDeck = async () => {
+    if (!user || !loadedDeck) return;
+    if (
+      typeof window !== "undefined" &&
+      !window.confirm(
+        lang === "zh"
+          ? "确定要删除这套卡组吗？此操作不可撤销。"
+          : "Delete this deck? This cannot be undone.",
+      )
+    ) {
+      return;
+    }
+    setSavingDeck(true);
+    setSaveError(null);
+    const supabase = createClient();
+    try {
+      await deleteDeck(supabase, loadedDeck.id);
+      router.replace(`/${lang}/account/decks`);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : "delete failed");
+      setSavingDeck(false);
+    }
+  };
+
   const t = lang === "zh"
-    ? { title: "卡组构筑器", search: "搜索卡片…", export: "导出卡组代码", clear: "清空", standard: "标准", wild: "狂野", cards: "张", noCards: "尚未加入任何卡牌，从左侧选择吧", copy: "复制", copied: "已复制", needMore: (n: number) => `还需 ${n} 张`, atCap: "已达 30 张", dust: "尘", saved: "已自动保存到本地" }
-    : { title: "Deck Builder", search: "Search cards…", export: "Export deck code", clear: "Clear", standard: "Standard", wild: "Wild", cards: " ", noCards: "No cards yet — pick some from the left", copy: "Copy", copied: "Copied", needMore: (n: number) => `Pick ${n} more`, atCap: "30/30 ready", dust: "dust", saved: "Auto-saved locally" };
+    ? {
+        title: "卡组构筑器",
+        search: "搜索卡片…",
+        export: "导出卡组代码",
+        clear: "清空",
+        standard: "标准",
+        wild: "狂野",
+        cards: "张",
+        noCards: "尚未加入任何卡牌，从左侧选择吧",
+        copy: "复制",
+        copied: "已复制",
+        needMore: (n: number) => `还需 ${n} 张`,
+        atCap: "已达 30 张",
+        dust: "尘",
+        saved: "已自动保存到本地",
+        deckTitlePh: "给卡组起个名字…",
+        save: "保存到我的卡组",
+        update: "更新",
+        savedAccount: "已保存",
+        publish: "公开发布",
+        unpublish: "设为私密",
+        published: "公开",
+        privateLabel: "私密",
+        publicLink: "公开链接",
+        delete: "删除",
+        signInPrompt: "登录后即可保存到云端",
+        forkedFrom: "源自",
+      }
+    : {
+        title: "Deck Builder",
+        search: "Search cards…",
+        export: "Export deck code",
+        clear: "Clear",
+        standard: "Standard",
+        wild: "Wild",
+        cards: " ",
+        noCards: "No cards yet — pick some from the left",
+        copy: "Copy",
+        copied: "Copied",
+        needMore: (n: number) => `Pick ${n} more`,
+        atCap: "30/30 ready",
+        dust: "dust",
+        saved: "Auto-saved locally",
+        deckTitlePh: "Name your deck…",
+        save: "Save to my decks",
+        update: "Update",
+        savedAccount: "Saved",
+        publish: "Publish publicly",
+        unpublish: "Make private",
+        published: "Public",
+        privateLabel: "Private",
+        publicLink: "Public link",
+        delete: "Delete",
+        signInPrompt: "Sign in to save to your account",
+        forkedFrom: "Forked from",
+      };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
@@ -461,6 +706,93 @@ export default function DeckBuilder({
                 </button>
               </div>
             )}
+
+            {/* Save to account */}
+            <div className="mt-4 pt-4 border-t border-[#2a3040]">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                maxLength={80}
+                placeholder={t.deckTitlePh}
+                className="w-full px-3 py-2 mb-2 rounded-lg bg-[#0f1419] border border-[#2a3040] text-xs text-[#e8e6e3] focus:outline-none focus:border-[#f0b232]"
+              />
+              {forkFromSlug && !loadedDeck && (
+                <p className="text-[10px] text-gray-500 mb-2">
+                  {t.forkedFrom}{" "}
+                  <Link
+                    href={`/${lang}/decks/${forkFromSlug}`}
+                    className="text-[#4fc3f7] hover:underline"
+                  >
+                    {forkFromSlug}
+                  </Link>
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={saveDeck}
+                disabled={savingDeck || total === 0}
+                className="w-full py-2 rounded-lg bg-[#4fc3f7] text-[#0f1419] font-semibold disabled:opacity-50 hover:bg-[#3aa8d8] transition-colors text-sm"
+              >
+                {savingDeck
+                  ? "…"
+                  : loadedDeck
+                    ? t.update
+                    : user
+                      ? t.save
+                      : t.signInPrompt}
+              </button>
+
+              {savedAt && !savingDeck && (
+                <p className="mt-1 text-[10px] text-emerald-400 text-center">
+                  {t.savedAccount}
+                </p>
+              )}
+              {saveError && (
+                <p className="mt-1 text-[10px] text-red-400 text-center">
+                  {saveError}
+                </p>
+              )}
+
+              {loadedDeck && (
+                <div className="mt-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2 text-[11px] text-gray-400">
+                    <span>
+                      {isPublic ? t.published : t.privateLabel}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={togglePublish}
+                      disabled={savingDeck}
+                      className={`px-2 py-0.5 rounded text-[11px] ${
+                        isPublic
+                          ? "bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30"
+                          : "bg-[#1a1f2e] text-gray-300 hover:text-[#f0b232] border border-[#2a3040]"
+                      }`}
+                    >
+                      {isPublic ? t.unpublish : t.publish}
+                    </button>
+                  </div>
+                  {isPublic && (
+                    <Link
+                      href={`/${lang}/u/decks/${loadedDeck.id}`}
+                      target="_blank"
+                      className="block text-center text-[11px] text-[#4fc3f7] hover:underline"
+                    >
+                      {t.publicLink} →
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={removeDeck}
+                    disabled={savingDeck}
+                    className="w-full text-[11px] text-red-400 hover:text-red-300 py-1"
+                  >
+                    {t.delete}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </aside>
       </div>

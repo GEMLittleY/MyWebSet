@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import DeckBuilder from "@/components/DeckBuilder";
 import { getCardIndex } from "@/lib/cards";
 
@@ -34,5 +35,15 @@ export default async function BuilderPage({
 }) {
   const { lang } = await params;
   const cards = getCardIndex();
-  return <DeckBuilder cards={cards} lang={lang === "zh" ? "zh" : "en"} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
+          <p className="text-sm text-gray-500">…</p>
+        </div>
+      }
+    >
+      <DeckBuilder cards={cards} lang={lang === "zh" ? "zh" : "en"} />
+    </Suspense>
+  );
 }
