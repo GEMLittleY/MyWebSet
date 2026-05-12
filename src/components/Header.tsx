@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLanguage } from "./LanguageProvider";
+import UserMenu from "./UserMenu";
 
 export default function Header() {
   const { lang, t, localePath } = useLanguage();
@@ -144,6 +145,7 @@ export default function Header() {
           >
             中文
           </Link>
+          <UserMenu />
           <button
             type="button"
             className="md:hidden ml-2 inline-flex items-center justify-center w-9 h-9 rounded text-gray-300 hover:text-[#f0b232]"
