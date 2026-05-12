@@ -5,6 +5,7 @@ import Link from "next/link";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import CardImage from "@/components/CardImage";
 import FavoriteButton from "@/components/FavoriteButton";
+import CommentSection from "@/components/CommentSection";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Deck } from "@/lib/decks";
 
@@ -388,11 +389,13 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
 
       {/* Guide */}
       {deck.guide && (
-        <div className="card p-4 sm:p-6">
+        <div className="card p-4 sm:p-6 mb-6 sm:mb-8">
           <h3 className="font-semibold gold-text mb-4">{t.decks.guide}</h3>
           <MarkdownRenderer content={deck.guide} />
         </div>
       )}
+
+      <CommentSection type="deck" id={deck.slug} />
     </div>
   );
 }

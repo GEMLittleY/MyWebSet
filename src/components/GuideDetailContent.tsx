@@ -3,6 +3,7 @@
 import Link from "next/link";
 import MarkdownRenderer from "./MarkdownRenderer";
 import FavoriteButton from "./FavoriteButton";
+import CommentSection from "./CommentSection";
 import { useLanguage } from "./LanguageProvider";
 import type { Post } from "@/lib/supabase";
 
@@ -44,6 +45,10 @@ export default function GuideDetailContent({ post }: { post: Post }) {
         </header>
         <MarkdownRenderer content={post.content} />
       </article>
+
+      <div className="mt-10">
+        <CommentSection type="guide" id={post.slug} />
+      </div>
     </div>
   );
 }
