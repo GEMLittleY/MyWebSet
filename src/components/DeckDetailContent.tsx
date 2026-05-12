@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import CardImage from "@/components/CardImage";
+import FavoriteButton from "@/components/FavoriteButton";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Deck } from "@/lib/decks";
 
@@ -180,6 +181,7 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
             {deck.deck_code}
           </code>
           <div className="flex gap-2 shrink-0 relative">
+            <FavoriteButton type="deck" id={deck.slug} variant="pill" />
             <button
               type="button"
               onClick={handleShare}

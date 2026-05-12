@@ -6,6 +6,7 @@ import Footer from "@/components/Footer";
 import JsonLd from "@/components/JsonLd";
 import AdSenseScript from "@/components/AdSenseScript";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import { FavoritesProvider } from "@/lib/favorites";
 import { getDict, type Lang } from "@/lib/i18n";
 import "../globals.css";
 
@@ -92,9 +93,11 @@ export default async function LangLayout({
         <JsonLd data={[orgLd, siteLd]} />
         <AdSenseScript />
         <LanguageProvider lang={typedLang}>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <FavoritesProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </FavoritesProvider>
         </LanguageProvider>
       </body>
     </html>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Deck } from "@/lib/decks";
 import { useLanguage } from "./LanguageProvider";
+import FavoriteButton from "./FavoriteButton";
 
 const CLASS_NAMES: Record<string, string> = {
   warrior: "战士", mage: "法师", hunter: "猎人", paladin: "圣骑士",
@@ -62,7 +63,9 @@ export default function DeckCard({ deck }: { deck: Deck }) {
 
   return (
     <Link href={localePath(`/decks/${deck.slug}`)} className="card block relative overflow-hidden">
-      {/* Hero portrait background */}
+      <div className="absolute top-2 right-2 z-10">
+        <FavoriteButton type="deck" id={deck.slug} variant="icon-only" />
+      </div>
       {heroId && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -78,19 +81,17 @@ export default function DeckCard({ deck }: { deck: Deck }) {
 
       <div className={`absolute inset-0 bg-gradient-to-r ${gradient}`} />
 
-      <div className="relative p-5">
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <h3 className="font-semibold text-[#e8e6e3]">{title}</h3>
-            {subtitle && subtitle !== title && (
-              <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
-            )}
-          </div>
-          <span className={`text-xs font-bold ${getTierColor(deck.tier)} bg-[#0f1419]/60 px-2 py-0.5 rounded`}>
-            T{deck.tier}
-          </span>
+      <div className="relative p-5 pr-12">
+        <div className="mb-3">
+          <h3 className="font-semibold text-[#e8e6e3]">{title}</h3>
+          {subtitle && subtitle !== title && (
+            <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+          )}
         </div>
         <div className="flex items-center gap-3 text-xs">
+          <span className={`text-xs font-bold ${getTierColor(deck.tier)} bg-[#0f1419]/60 px-1.5 py-0.5 rounded`}>
+            T{deck.tier}
+          </span>
           <span className={`class-${deck.hero_class}`}>{className}</span>
           <span className="text-gray-500">{archetypeName}</span>
           <span className="text-gray-500">

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import MarkdownRenderer from "./MarkdownRenderer";
+import FavoriteButton from "./FavoriteButton";
 import { useLanguage } from "./LanguageProvider";
 import type { Post } from "@/lib/supabase";
 
@@ -34,9 +35,12 @@ export default function GuideDetailContent({ post }: { post: Post }) {
         )}
         <header className="mb-8">
           <time className="text-sm text-gray-500">{date}</time>
-          <h1 className="mt-2 text-3xl font-bold text-[#e8e6e3]">
-            {post.title}
-          </h1>
+          <div className="mt-2 flex items-start justify-between gap-3">
+            <h1 className="text-3xl font-bold text-[#e8e6e3] flex-1 min-w-0">
+              {post.title}
+            </h1>
+            <FavoriteButton type="guide" id={post.slug} variant="pill" />
+          </div>
         </header>
         <MarkdownRenderer content={post.content} />
       </article>

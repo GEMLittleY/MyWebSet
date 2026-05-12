@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getCardById, getCardIndex } from "@/lib/cards";
 import { getAllDecks } from "@/lib/decks";
 import JsonLd from "@/components/JsonLd";
+import FavoriteButton from "@/components/FavoriteButton";
 import { getDict, type Lang } from "@/lib/i18n";
 
 export const revalidate = 86400;
@@ -127,9 +128,12 @@ export default async function CardDetailPage({ params }: Props) {
             />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e6e3] mb-2">
-              {title}
-            </h1>
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-[#e8e6e3]">
+                {title}
+              </h1>
+              <FavoriteButton type="card" id={card.id} variant="pill" />
+            </div>
             <p className="text-sm text-gray-500 mb-6">
               {typedLang === "en" ? card.name_zh : card.name_en}
             </p>
