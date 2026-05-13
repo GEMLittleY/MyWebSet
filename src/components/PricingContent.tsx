@@ -51,8 +51,57 @@ const COPY = {
         a: "We are aiming for Q3 2026. Waitlist members get a launch discount and first access.",
       },
       {
+        q: "Which payment methods will be supported?",
+        a: "Major credit cards via Stripe, plus PayPal and regional methods (Alipay, etc.) via Paddle. We pick whichever is closest to your billing country.",
+      },
+      {
         q: "How do I cancel?",
         a: "One click in your account page, any time, no questions. You keep Pro access through the end of the current billing period.",
+      },
+      {
+        q: "Will my data be deleted if I downgrade?",
+        a: "Never. Your decks, comments, collection and favourites stay. You just lose the Pro-only tools until you resubscribe.",
+      },
+    ],
+    compareHeading: "Detailed comparison",
+    cmpFeature: "Feature",
+    cmpFree: "Free",
+    cmpPro: "Pro",
+    rows: [
+      ["Meta deck library", "✓", "✓"],
+      ["Mulligan & matchup data", "✓", "✓"],
+      ["AI deck picker (3/day)", "✓", "Unlimited"],
+      ["AI coach messages", "3 / day", "Unlimited"],
+      ["Collection diff calculator", "Manual only", "Bulk import + saved snapshots"],
+      ["Save & publish custom decks", "✓", "Private + public + analytics"],
+      ["Card favourites", "✓", "✓"],
+      ["Threaded comments", "✓", "✓"],
+      ["Meta filters by rank/region", "—", "✓"],
+      ["Deck performance over time", "—", "✓"],
+      ["Ad-free experience", "—", "✓"],
+      ["Early access to new tools", "—", "✓"],
+    ],
+    highlightsHeading: "What Pro unlocks",
+    highlights: [
+      {
+        title: "Unlimited AI coach",
+        body: "Ask deck-specific strategy and mulligan questions any time — no daily cap.",
+        icon: "💬",
+      },
+      {
+        title: "Bulk collection tools",
+        body: "Import your full collection with one paste; we keep snapshots over time so you can plan craft order.",
+        icon: "🧮",
+      },
+      {
+        title: "Advanced meta filters",
+        body: "Slice win rates by rank bucket (Diamond+, Legend top 1k) and by region.",
+        icon: "📊",
+      },
+      {
+        title: "Ad-free everywhere",
+        body: "No banner, no inline, no interstitial — pages stay fast and clean.",
+        icon: "🛡️",
       },
     ],
   },
@@ -101,8 +150,57 @@ const COPY = {
         a: "目标 2026 年 Q3。候补会员可获得首发折扣并优先体验。",
       },
       {
+        q: "支持哪些付款方式？",
+        a: "信用卡（Stripe）、PayPal 以及支付宝等地区支付（Paddle 通道），系统会自动按账单地区选择合适的付款渠道。",
+      },
+      {
         q: "怎么取消？",
         a: "账号设置一键取消，无需说明原因。当前付费周期内 Pro 权益保留。",
+      },
+      {
+        q: "降级后我的数据会被删除吗？",
+        a: "不会。卡组、评论、收藏、卡牌收藏全部保留，只是暂时无法使用 Pro 专属工具。",
+      },
+    ],
+    compareHeading: "详细对比",
+    cmpFeature: "功能",
+    cmpFree: "免费版",
+    cmpPro: "Pro",
+    rows: [
+      ["Meta 卡组库", "✓", "✓"],
+      ["起手指南 & 对阵数据", "✓", "✓"],
+      ["AI 卡组推荐（3次/天）", "✓", "无限次"],
+      ["AI 教练对话", "3 次 / 天", "无限"],
+      ["集合差额计算", "手动录入", "批量导入 + 历史快照"],
+      ["保存并发布自定义卡组", "✓", "私有 + 公开 + 数据分析"],
+      ["卡牌收藏", "✓", "✓"],
+      ["评论与回复", "✓", "✓"],
+      ["按段位 / 地区筛选 Meta", "—", "✓"],
+      ["卡组表现趋势图", "—", "✓"],
+      ["无广告体验", "—", "✓"],
+      ["新功能抢先体验", "—", "✓"],
+    ],
+    highlightsHeading: "Pro 解锁了什么",
+    highlights: [
+      {
+        title: "无限 AI 教练",
+        body: "每天随时找 AI 问对线、问留牌、问决策，再也不用担心额度。",
+        icon: "💬",
+      },
+      {
+        title: "批量收藏导入",
+        body: "一键导入完整收藏并保存历史快照，规划合成顺序更高效。",
+        icon: "🧮",
+      },
+      {
+        title: "高阶 Meta 筛选",
+        body: "按段位（钻石+、传说前 1000）和地区切片查看真实胜率。",
+        icon: "📊",
+      },
+      {
+        title: "全站无广告",
+        body: "彻底去除所有横幅、内联和插屏广告，页面更轻更快。",
+        icon: "🛡️",
       },
     ],
   },
@@ -119,17 +217,45 @@ export default function PricingContent({ lang }: { lang: Lang }) {
     100 - (PRO_PRICE_USD_ANNUAL / (PRO_PRICE_USD * 12)) * 100,
   );
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // P3.3 will POST to /api/waitlist → Supabase table. For now we just
-    // simulate locally so the UI works end-to-end.
-    if (email.trim()) {
-      setSubmitted(true);
-      try {
-        window.localStorage.setItem("hg_pro_waitlist", email.trim());
-      } catch {
-        // ignore quota errors
+    if (!email.trim() || submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), lang, source: "pricing" }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as {
+          message?: string;
+        };
+        setSubmitError(
+          data.message ?? (lang === "zh" ? "提交失败" : "Something went wrong"),
+        );
+      } else {
+        setSubmitted(true);
+        try {
+          window.localStorage.setItem("hg_pro_waitlist", email.trim());
+        } catch {
+          // ignore quota errors
+        }
       }
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error
+          ? err.message
+          : lang === "zh"
+            ? "网络异常"
+            : "Network error",
+      );
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -198,8 +324,71 @@ export default function PricingContent({ lang }: { lang: Lang }) {
         />
       </div>
 
+      {/* Highlights */}
+      <section className="mt-14">
+        <h2 className="text-xl font-bold gold-text text-center mb-6">
+          {t.highlightsHeading}
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {t.highlights.map((h) => (
+            <div key={h.title} className="card p-5">
+              <div className="text-2xl mb-2" aria-hidden>
+                {h.icon}
+              </div>
+              <h3 className="text-sm font-semibold text-[#e8e6e3] mb-1">
+                {h.title}
+              </h3>
+              <p className="text-xs text-gray-400 leading-relaxed">{h.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Detailed comparison table */}
+      <section className="mt-14">
+        <h2 className="text-xl font-bold gold-text text-center mb-6">
+          {t.compareHeading}
+        </h2>
+        <div className="card p-2 sm:p-3 overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-400 text-xs uppercase tracking-wide">
+                <th className="px-3 py-2 font-medium">{t.cmpFeature}</th>
+                <th className="px-3 py-2 font-medium text-center w-24 sm:w-32">
+                  {t.cmpFree}
+                </th>
+                <th className="px-3 py-2 font-medium text-center w-24 sm:w-32 text-[#f0b232]">
+                  {t.cmpPro}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {t.rows.map((r, i) => (
+                <tr
+                  key={r[0]}
+                  className={i % 2 === 0 ? "bg-[#0f1419]/40" : ""}
+                >
+                  <td className="px-3 py-2 text-[#e8e6e3]">{r[0]}</td>
+                  <td className="px-3 py-2 text-center text-gray-400">
+                    {r[1]}
+                  </td>
+                  <td className="px-3 py-2 text-center text-[#f0b232] font-medium">
+                    {r[2]}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-center text-xs text-gray-600 mt-3">
+          {lang === "zh"
+            ? "✓ = 包含；— = 不包含。Pro 上线后所有 Free 功能继续可用。"
+            : "✓ = included; — = not included. All Free features remain available after Pro launches."}
+        </p>
+      </section>
+
       {/* Waitlist */}
-      <section className="mt-14 max-w-xl mx-auto card p-6 text-center">
+      <section id="waitlist" className="mt-14 max-w-xl mx-auto card p-6 text-center">
         <p className="text-sm text-gray-300 mb-4">{t.waitlist}</p>
         {submitted ? (
           <p className="text-[#63d98c] font-medium">{t.waitlistSent}</p>
@@ -215,11 +404,15 @@ export default function PricingContent({ lang }: { lang: Lang }) {
             />
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-[#f0b232] text-[#0f1419] font-semibold hover:bg-[#d4982a] transition-colors"
+              disabled={submitting || !email.trim()}
+              className="px-5 py-2 rounded-lg bg-[#f0b232] text-[#0f1419] font-semibold hover:bg-[#d4982a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {t.join}
+              {submitting ? "…" : t.join}
             </button>
           </form>
+        )}
+        {submitError && (
+          <p className="mt-3 text-xs text-red-400">{submitError}</p>
         )}
       </section>
 
