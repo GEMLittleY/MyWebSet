@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useSession } from "@/lib/useSession";
+import { Events, track } from "@/lib/analytics";
 import type { CardIndexEntry } from "@/lib/cards-meta";
 import { CARD_CLASSES } from "@/lib/cards-meta";
 
@@ -285,6 +286,7 @@ export default function CollectionEditor({
         for (const r of rowsToWrite) m.set(r.card_dbf_id, r.count);
         return m;
       });
+      track(Events.CollectionImport, { added: rowsToWrite.length });
       setImportNote(t.importDone(rowsToWrite.length));
     } catch (e) {
       setError(e instanceof Error ? e.message : "import failed");

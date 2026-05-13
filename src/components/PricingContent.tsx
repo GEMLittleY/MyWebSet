@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PRO_PRICE_USD, PRO_PRICE_USD_ANNUAL } from "@/lib/pro";
+import { Events, track } from "@/lib/analytics";
 import ProBadge from "./ProBadge";
 import type { Lang } from "@/lib/i18n";
 
@@ -212,6 +213,10 @@ export default function PricingContent({ lang }: { lang: Lang }) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
+  useEffect(() => {
+    track(Events.ViewPricing, { lang });
+  }, [lang]);
+
   const monthEquivalent = annual ? PRO_PRICE_USD_ANNUAL / 12 : PRO_PRICE_USD;
   const savePct = Math.round(
     100 - (PRO_PRICE_USD_ANNUAL / (PRO_PRICE_USD * 12)) * 100,
@@ -240,6 +245,7 @@ export default function PricingContent({ lang }: { lang: Lang }) {
         );
       } else {
         setSubmitted(true);
+        track(Events.WaitlistSignup, { lang, plan: annual ? "annual" : "monthly" });
         try {
           window.localStorage.setItem("hg_pro_waitlist", email.trim());
         } catch {

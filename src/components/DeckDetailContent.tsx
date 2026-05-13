@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import CardImage from "@/components/CardImage";
@@ -8,6 +8,7 @@ import FavoriteButton from "@/components/FavoriteButton";
 import CommentSection from "@/components/CommentSection";
 import DeckDiffPanel from "@/components/DeckDiffPanel";
 import { useLanguage } from "@/components/LanguageProvider";
+import { Events, track } from "@/lib/analytics";
 import type { Deck } from "@/lib/decks";
 import type { DeckCard } from "@/lib/collection-diff";
 
@@ -38,6 +39,16 @@ export default function DeckDetailContent({
   const { t, lang, localePath } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+
+  useEffect(() => {
+    track(Events.ViewDeck, {
+      slug: deck.slug,
+      class: deck.hero_class,
+      archetype: deck.archetype,
+      tier: deck.tier,
+      lang,
+    });
+  }, [deck.slug, deck.hero_class, deck.archetype, deck.tier, lang]);
   const [shareOpen, setShareOpen] = useState(false);
 
   const copyDeckCode = () => {

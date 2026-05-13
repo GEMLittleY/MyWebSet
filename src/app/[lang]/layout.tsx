@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import JsonLd from "@/components/JsonLd";
 import AdSenseScript from "@/components/AdSenseScript";
+import AnalyticsBoot from "@/components/AnalyticsBoot";
 import { LanguageProvider } from "@/components/LanguageProvider";
 import { FavoritesProvider } from "@/lib/favorites";
 import { getDict, type Lang } from "@/lib/i18n";
@@ -92,8 +94,10 @@ export default async function LangLayout({
       <body className="min-h-full flex flex-col bg-[#0f1419] text-[#e8e6e3]">
         <JsonLd data={[orgLd, siteLd]} />
         <AdSenseScript />
+        <Analytics />
         <LanguageProvider lang={typedLang}>
           <FavoritesProvider>
+            <AnalyticsBoot />
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />

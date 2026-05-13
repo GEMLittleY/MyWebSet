@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { useSession } from "@/lib/useSession";
+import { Events, track } from "@/lib/analytics";
 import {
   computeDiff,
   type DeckCard,
@@ -78,6 +79,10 @@ export default function DeckDiffPanel({
         }
         setOwned(map);
         setLoaded(true);
+        track(Events.ViewDeckDiff, {
+          owned_count: map.size,
+          deck_size: enrichedCards.length,
+        });
       });
     return () => {
       cancelled.current = true;

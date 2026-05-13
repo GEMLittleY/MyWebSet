@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+import { Events, track } from "@/lib/analytics";
 
 type Lang = "en" | "zh";
 
@@ -66,6 +67,7 @@ export default function LoginContent({
   const signInWithGithub = async () => {
     setPendingProvider("github");
     setLocalError(null);
+    track(Events.SignInStart, { provider: "github" });
     try {
       const supabase = createClient();
       const callback = new URL("/auth/callback", window.location.origin);
@@ -90,6 +92,7 @@ export default function LoginContent({
     if (!email.trim()) return;
     setEmailSubmitting(true);
     setLocalError(null);
+    track(Events.SignInStart, { provider: "email" });
     try {
       const supabase = createClient();
       const callback = new URL("/auth/callback", window.location.origin);

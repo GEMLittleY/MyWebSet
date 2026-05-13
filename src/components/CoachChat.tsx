@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "@/lib/useSession";
+import { Events, track } from "@/lib/analytics";
 import { useLanguage } from "./LanguageProvider";
 import MarkdownRenderer from "./MarkdownRenderer";
 
@@ -123,6 +124,11 @@ export default function CoachChat({
     setMessages(nextMessages);
     setDraft("");
     setBusy(true);
+    track(Events.CoachMessageSent, {
+      with_deck: deckSlug ? true : false,
+      length: text.length,
+      lang,
+    });
     try {
       const res = await fetch("/api/coach/chat", {
         method: "POST",
@@ -141,6 +147,11 @@ export default function CoachChat({
       };
       if (!res.ok || !data.text) {
         setError(data.message ?? `error ${res.status}`);
+        if (res.status === 429) {
+          track(Events.CoachLimitHit, { lang });
+        } else {
+          track(Events.CoachError, { status: res.status, error: data.error ?? null });
+        }
         // Roll back optimistic user message? Keep it — they can see what they asked.
         if (data.usage) setUsage(data.usage);
         return;
