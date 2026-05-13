@@ -1,10 +1,12 @@
 import { getDeckBySlug, getAllDecks } from "@/lib/decks";
+import { getCardIndex } from "@/lib/cards";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import DeckDetailContent from "@/components/DeckDetailContent";
 import JsonLd from "@/components/JsonLd";
 import { type Lang } from "@/lib/i18n";
 import { getDict } from "@/lib/i18n";
+import type { DeckCard } from "@/lib/collection-diff";
 
 export const revalidate = 60;
 
@@ -105,10 +107,31 @@ export default async function DeckDetailPage({ params }: Props) {
     },
   };
 
+  // Enrich each entry in deck.card_list with rarity + dbf id from the local
+  // cards index, so the collection-diff panel can run client-side without
+  // needing another round trip.
+  const cardIndex = getCardIndex();
+  const byStringId = new Map(cardIndex.map((c) => [c.id, c] as const));
+  const enrichedCards: DeckCard[] = [];
+  for (const entry of deck.card_list ?? []) {
+    if (typeof entry.card_id !== "string") continue;
+    const lookup = byStringId.get(entry.card_id);
+    if (!lookup) continue;
+    enrichedCards.push({
+      card_dbf_id: lookup.dbfId,
+      card_id: lookup.id,
+      count: entry.count,
+      rarity: lookup.rarity,
+      name_en: lookup.name_en,
+      name_zh: lookup.name_zh,
+      cost: lookup.cost ?? entry.cost ?? 0,
+    });
+  }
+
   return (
     <>
       <JsonLd data={ldData} />
-      <DeckDetailContent deck={deck} />
+      <DeckDetailContent deck={deck} enrichedCards={enrichedCards} />
     </>
   );
 }

@@ -272,6 +272,32 @@ export default function AccountContent({ lang }: { lang: Lang }) {
               : "Saved drafts and published variants"}
           </p>
         </Link>
+        <Link
+          href={`/${lang}/account/collection`}
+          className="card p-5 hover:border-[#f0b232]/40 transition-colors"
+        >
+          <p className="text-sm font-medium text-[#e8e6e3] mb-1">
+            {lang === "zh" ? "我的卡牌收藏" : "Card collection"}
+          </p>
+          <p className="text-xs text-gray-500">
+            {lang === "zh"
+              ? "记录拥有的卡牌，自动算出造价缺口"
+              : "Track owned cards; we'll compute real crafting cost"}
+          </p>
+        </Link>
+        <Link
+          href={`/${lang}/account/notifications`}
+          className="card p-5 hover:border-[#f0b232]/40 transition-colors"
+        >
+          <p className="text-sm font-medium text-[#e8e6e3] mb-1">
+            {lang === "zh" ? "通知" : "Notifications"}
+          </p>
+          <p className="text-xs text-gray-500">
+            {lang === "zh"
+              ? "评论回复与系统消息"
+              : "Comment replies and system updates"}
+          </p>
+        </Link>
       </section>
 
       <div className="flex items-center gap-3">

@@ -6,8 +6,10 @@ import MarkdownRenderer from "@/components/MarkdownRenderer";
 import CardImage from "@/components/CardImage";
 import FavoriteButton from "@/components/FavoriteButton";
 import CommentSection from "@/components/CommentSection";
+import DeckDiffPanel from "@/components/DeckDiffPanel";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Deck } from "@/lib/decks";
+import type { DeckCard } from "@/lib/collection-diff";
 
 const CLASS_NAMES: Record<string, string> = {
   warrior: "战士", mage: "法师", hunter: "猎人", paladin: "圣骑士",
@@ -26,7 +28,13 @@ const MODE_NAMES: Record<string, string> = {
   wild: "狂野",
 };
 
-export default function DeckDetailContent({ deck }: { deck: Deck }) {
+export default function DeckDetailContent({
+  deck,
+  enrichedCards = [],
+}: {
+  deck: Deck;
+  enrichedCards?: DeckCard[];
+}) {
   const { t, lang, localePath } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
@@ -363,6 +371,9 @@ export default function DeckDetailContent({ deck }: { deck: Deck }) {
           {lang === "en" ? "Tap a card to enlarge" : "点击卡牌查看大图"}
         </p>
       </div>
+
+      {/* Collection-aware crafting cost */}
+      {enrichedCards.length > 0 && <DeckDiffPanel enrichedCards={enrichedCards} />}
 
       {/* Mulligan (only when data exists) */}
       {(deck.mulligan ?? []).length > 0 && (
