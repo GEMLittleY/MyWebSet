@@ -12,6 +12,7 @@ const dict = {
       guides: "攻略",
       meta: "Meta",
       recommend: "AI推荐",
+      coach: "AI 教练",
     },
     hero: {
       title: "HearthGuide",
@@ -99,6 +100,7 @@ const dict = {
       guides: "Guides",
       meta: "Meta",
       recommend: "AI Pick",
+      coach: "AI Coach",
     },
     hero: {
       title: "HearthGuide",

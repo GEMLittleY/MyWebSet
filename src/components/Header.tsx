@@ -38,9 +38,9 @@ export default function Header() {
     { href: localePath("/decks"), label: t.nav.decks },
     { href: localePath("/cards"), label: t.nav.cards },
     { href: localePath("/builder"), label: t.nav.builder },
-    { href: localePath("/guides"), label: t.nav.guides },
     { href: localePath("/meta"), label: t.nav.meta },
-    { href: localePath("/recommend"), label: t.nav.recommend },
+    { href: localePath("/coach"), label: t.nav.coach },
+    { href: localePath("/guides"), label: t.nav.guides },
   ];
 
   return (
