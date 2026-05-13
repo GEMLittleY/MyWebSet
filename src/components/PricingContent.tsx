@@ -207,15 +207,54 @@ const COPY = {
   },
 } satisfies Record<Lang, unknown>;
 
-export default function PricingContent({ lang }: { lang: Lang }) {
+export default function PricingContent({
+  lang,
+  billingEnabled = false,
+}: {
+  lang: Lang;
+  billingEnabled?: boolean;
+}) {
   const t = COPY[lang];
   const [annual, setAnnual] = useState(true);
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [checkoutBusy, setCheckoutBusy] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
-    track(Events.ViewPricing, { lang });
-  }, [lang]);
+    track(Events.ViewPricing, { lang, billingEnabled });
+  }, [lang, billingEnabled]);
+
+  const subscribe = async () => {
+    if (checkoutBusy) return;
+    setCheckoutError(null);
+    setCheckoutBusy(true);
+    track(Events.PricingCtaClick, { plan: annual ? "annual" : "monthly", lang });
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: annual ? "annual" : "monthly", lang }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (res.status === 401) {
+        // Not signed in — send to login first.
+        window.location.href = `/${lang}/login?next=/${lang}/pricing`;
+        return;
+      }
+      if (!res.ok || !data.url) {
+        setCheckoutError(
+          data.error ?? (lang === "zh" ? "结账启动失败" : "Could not start checkout"),
+        );
+        return;
+      }
+      window.location.href = data.url;
+    } catch (e) {
+      setCheckoutError(e instanceof Error ? e.message : "network error");
+    } finally {
+      setCheckoutBusy(false);
+    }
+  };
 
   const monthEquivalent = annual ? PRO_PRICE_USD_ANNUAL / 12 : PRO_PRICE_USD;
   const savePct = Math.round(
@@ -323,11 +362,28 @@ export default function PricingContent({ lang }: { lang: Lang }) {
               ? `$${PRO_PRICE_USD_ANNUAL}${lang === "zh" ? "（年付）" : " billed annually"}`
               : undefined
           }
-          cta={t.cta_pro}
-          ctaNote={t.soon}
+          cta={
+            billingEnabled
+              ? lang === "zh"
+                ? checkoutBusy
+                  ? "正在跳转…"
+                  : "立即订阅"
+                : checkoutBusy
+                  ? "Redirecting…"
+                  : "Subscribe now"
+              : t.cta_pro
+          }
+          ctaNote={billingEnabled ? undefined : t.soon}
+          ctaDisabled={billingEnabled ? checkoutBusy : false}
+          onCta={billingEnabled ? subscribe : undefined}
           highlight
           features={t.features.pro}
         />
+        {checkoutError && (
+          <p className="md:col-span-2 -mt-3 text-xs text-red-400 text-center">
+            {checkoutError}
+          </p>
+        )}
       </div>
 
       {/* Highlights */}
@@ -457,6 +513,7 @@ function Plan({
   cta,
   ctaDisabled,
   ctaNote,
+  onCta,
   features,
   highlight,
 }: {
@@ -468,6 +525,7 @@ function Plan({
   cta: string;
   ctaDisabled?: boolean;
   ctaNote?: string;
+  onCta?: () => void;
   features: readonly string[];
   highlight?: boolean;
 }) {
@@ -499,6 +557,7 @@ function Plan({
       <button
         type="button"
         disabled={ctaDisabled}
+        onClick={onCta}
         className={`w-full py-2.5 rounded-lg font-semibold transition-colors ${
           ctaDisabled
             ? "bg-[#1a1f2e] text-gray-500 cursor-default border border-[#2a3040]"

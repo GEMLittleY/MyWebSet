@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient as createServerSupabase } from "@/lib/supabase-server";
 import { getDeckBySlug } from "@/lib/decks";
+import { getProStatus } from "@/lib/pro";
 import {
   COACH_API_BASE,
   COACH_MODEL,
@@ -92,20 +93,24 @@ export async function POST(request: Request) {
     );
   }
 
-  const limit = await ensureUnderLimit(supabase, user.id);
-  if (!limit.ok) {
-    return NextResponse.json(
-      {
-        error: "limit_reached",
-        message:
-          lang === "zh"
-            ? `今天已用尽 ${DAILY_LIMIT} 次免费额度，升级到 Pro 即可无限使用。`
-            : `You've used today's ${DAILY_LIMIT} free messages. Upgrade to Pro for unlimited coach access.`,
-        used: limit.used,
-        limit: DAILY_LIMIT,
-      },
-      { status: 429 },
-    );
+  // Pro members bypass the daily ceiling entirely.
+  const pro = await getProStatus(supabase, user.id);
+  if (!pro.isPro) {
+    const limit = await ensureUnderLimit(supabase, user.id);
+    if (!limit.ok) {
+      return NextResponse.json(
+        {
+          error: "limit_reached",
+          message:
+            lang === "zh"
+              ? `今天已用尽 ${DAILY_LIMIT} 次免费额度，升级到 Pro 即可无限使用。`
+              : `You've used today's ${DAILY_LIMIT} free messages. Upgrade to Pro for unlimited coach access.`,
+          used: limit.used,
+          limit: DAILY_LIMIT,
+        },
+        { status: 429 },
+      );
+    }
   }
 
   // Optionally enrich context from the active deck slug.
@@ -188,11 +193,24 @@ export async function POST(request: Request) {
       ? "我暂时没有想到合适的回答，请换个说法再试一次。"
       : "I couldn't come up with a useful answer — try rephrasing.");
 
-  // Record one usage row for rate limiting.
-  await supabase.from("coach_usage").insert({ user_id: user.id });
+  // Only count free-tier usage; Pro is unlimited and unmetered.
+  let used = 0;
+  let limit: number | null = null;
+  if (!pro.isPro) {
+    await supabase.from("coach_usage").insert({ user_id: user.id });
+    const day = todayKey();
+    const { count } = await supabase
+      .from("coach_usage")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("created_at", `${day}T00:00:00.000Z`);
+    used = count ?? 0;
+    limit = DAILY_LIMIT;
+  }
 
   return NextResponse.json({
     text,
-    usage: { used: limit.used + 1, limit: DAILY_LIMIT },
+    pro: pro.isPro,
+    usage: { used, limit: limit ?? -1 },
   });
 }

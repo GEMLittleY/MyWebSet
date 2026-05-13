@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PricingContent from "@/components/PricingContent";
+import { billingConfig } from "@/lib/pro";
 
 export async function generateMetadata({
   params,
@@ -30,5 +31,15 @@ export default async function PricingPage({
   params: Promise<{ lang: string }>;
 }) {
   const { lang } = await params;
-  return <PricingContent lang={lang === "zh" ? "zh" : "en"} />;
+  const cfg = billingConfig();
+  const billingEnabled =
+    cfg.enabled &&
+    Boolean(cfg.stripe.priceMonthly) &&
+    Boolean(cfg.stripe.priceAnnual);
+  return (
+    <PricingContent
+      lang={lang === "zh" ? "zh" : "en"}
+      billingEnabled={billingEnabled}
+    />
+  );
 }

@@ -9,6 +9,14 @@ import type { Profile } from "@/lib/profile";
 
 type Lang = "en" | "zh";
 
+type ProfileWithBilling = Profile & {
+  is_pro?: boolean;
+  pro_until?: string | null;
+  billing_provider?: string | null;
+  billing_status?: string | null;
+  stripe_customer_id?: string | null;
+};
+
 const PROVIDER_LABEL: Record<string, string> = {
   google: "Google",
   discord: "Discord",
@@ -19,13 +27,15 @@ const PROVIDER_LABEL: Record<string, string> = {
 export default function AccountContent({ lang }: { lang: Lang }) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<ProfileWithBilling | null>(null);
   const [email, setEmail] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [draftBio, setDraftBio] = useState("");
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
 
   const t =
     lang === "zh"
@@ -95,7 +105,7 @@ export default function AccountContent({ lang }: { lang: Lang }) {
             setLoading(false);
             return;
           }
-          const p = (data as Profile | null) ?? null;
+          const p = (data as ProfileWithBilling | null) ?? null;
           setProfile(p);
           setDraftName(p?.display_name ?? "");
           setDraftBio(p?.bio ?? "");
@@ -131,6 +141,31 @@ export default function AccountContent({ lang }: { lang: Lang }) {
     }
     setSavedAt(Date.now());
     fetchProfile({ current: false });
+  };
+
+  const openPortal = async () => {
+    setPortalBusy(true);
+    setPortalError(null);
+    try {
+      const res = await fetch(`/api/billing/portal?lang=${lang}`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        setPortalError(
+          data.error ??
+            (lang === "zh"
+              ? "无法打开订阅管理"
+              : "Could not open billing portal"),
+        );
+      }
+    } catch (e) {
+      setPortalError(e instanceof Error ? e.message : "network error");
+    } finally {
+      setPortalBusy(false);
+    }
   };
 
   const handleSignOut = async () => {
@@ -247,6 +282,75 @@ export default function AccountContent({ lang }: { lang: Lang }) {
             )}
           </span>
         </div>
+      </section>
+
+      <section className="card p-5 mb-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">
+              {lang === "zh" ? "订阅" : "Subscription"}
+            </p>
+            {profile.is_pro ? (
+              <>
+                <p className="text-sm text-[#f0b232] font-semibold">
+                  HearthGuide Pro
+                  {profile.billing_status === "trialing" && (
+                    <span className="ml-2 text-[10px] uppercase tracking-wide text-gray-400">
+                      {lang === "zh" ? "试用" : "trial"}
+                    </span>
+                  )}
+                </p>
+                {profile.pro_until && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {lang === "zh" ? "下次续期：" : "Renews: "}
+                    {new Date(profile.pro_until).toLocaleDateString(
+                      lang === "zh" ? "zh-CN" : "en-US",
+                    )}
+                  </p>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-gray-300">
+                  {lang === "zh" ? "免费版" : "Free plan"}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {lang === "zh"
+                    ? "升级 Pro 解锁 AI 教练无限次和高阶 Meta 工具。"
+                    : "Upgrade to Pro for unlimited AI coach and advanced meta tools."}
+                </p>
+              </>
+            )}
+          </div>
+          <div className="flex flex-col gap-2">
+            {profile.is_pro ? (
+              profile.stripe_customer_id ? (
+                <button
+                  type="button"
+                  onClick={openPortal}
+                  disabled={portalBusy}
+                  className="px-3 py-1.5 rounded-lg bg-[#1a1f2e] border border-[#2a3040] text-xs text-gray-300 hover:border-[#f0b232] disabled:opacity-50"
+                >
+                  {portalBusy
+                    ? "…"
+                    : lang === "zh"
+                      ? "管理订阅"
+                      : "Manage billing"}
+                </button>
+              ) : null
+            ) : (
+              <Link
+                href={`/${lang}/pricing`}
+                className="px-3 py-1.5 rounded-lg bg-[#f0b232] text-[#0f1419] text-xs font-medium hover:bg-[#d4982a] text-center"
+              >
+                {lang === "zh" ? "升级 Pro" : "Upgrade to Pro"}
+              </Link>
+            )}
+          </div>
+        </div>
+        {portalError && (
+          <p className="mt-2 text-xs text-red-400">{portalError}</p>
+        )}
       </section>
 
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
